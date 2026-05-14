@@ -1,0 +1,103 @@
+# ============================================================
+# .gitignore — ChurnLens
+# ============================================================
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+*.egg-info/
+build/
+dist/
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+MANIFEST
+pip-log.txt
+pip-delete-this-directory.txt
+
+# --- Virtual environments ---
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# --- Notebooks ---
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/*
+profile_default/
+ipython_config.py
+
+# --- Tooling ---
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+*.cover
+.hypothesis/
+.cache/
+
+# --- Data (no se sube nada bajo data/ por defecto) ---
+# Se conservan los .gitkeep para preservar la estructura de carpetas.
+data/raw/*
+data/interim/*
+data/processed/*
+data/external/*
+!data/raw/.gitkeep
+!data/interim/.gitkeep
+!data/processed/.gitkeep
+!data/external/.gitkeep
+!data/**/README.md
+
+# --- Reports & artifacts ---
+reports/figures/*
+!reports/figures/.gitkeep
+reports/output/
+mlruns/
+mlartifacts/
+models/*.pkl
+models/*.joblib
+models/*.onnx
+models/*.h5
+
+# --- Secrets / env ---
+.env
+.env.*
+!.env.example
+secrets.yaml
+credentials.json
+*.pem
+*.key
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- IDE ---
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# --- Logs ---
+logs/
+*.log
