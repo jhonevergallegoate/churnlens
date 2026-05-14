@@ -110,9 +110,7 @@ def cmd_materialize() -> None:
 
 @data_app.command("summary")
 def cmd_summary(
-    as_json: Annotated[
-        bool, typer.Option("--json", help="Emite la salida como JSON.")
-    ] = False,
+    as_json: Annotated[bool, typer.Option("--json", help="Emite la salida como JSON.")] = False,
 ) -> None:
     """Imprime un resumen ejecutivo del dataset."""
     loader = TelcoChurnLoader()

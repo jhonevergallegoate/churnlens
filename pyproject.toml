@@ -115,14 +115,19 @@ ignore = [
     "D100", "D104",  # missing module/package docstring
     "PLR0913",       # too many arguments
     "PLR2004",       # magic numbers (común en tests)
+    "RUF001",        # ambiguous unicode chars (×, ✓) usados intencionalmente en strings de UX
+    "RUF002",        # ambiguous chars en docstrings (acentos, "—", etc.)
+    "RUF003",        # ambiguous chars en comentarios
+    "PLC0415",       # import dentro de función (útil para imports lazy)
 ]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["D", "PLR2004", "S101"]
-"scripts/**" = ["D"]
+"tests/**" = ["D", "PLR2004", "S101", "E501", "SLF001"]
+"tests/conftest.py" = ["D", "E501"]
+"scripts/**" = ["D", "E402"]
 
 [tool.ruff.format]
 quote-style = "double"

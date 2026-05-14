@@ -38,9 +38,7 @@ def _configure_structlog() -> None:
             structlog.processors.format_exc_info,
             renderer,
         ],
-        wrapper_class=structlog.make_filtering_bound_logger(
-            getattr(logging, settings.log_level)
-        ),
+        wrapper_class=structlog.make_filtering_bound_logger(getattr(logging, settings.log_level)),
         context_class=dict,
         logger_factory=structlog.PrintLoggerFactory(file=sys.stderr),
         cache_logger_on_first_use=True,

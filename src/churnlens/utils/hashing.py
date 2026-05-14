@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import TypedDict
+
+UTC = timezone.utc
 
 _CHUNK_SIZE = 1024 * 1024  # 1 MiB
 

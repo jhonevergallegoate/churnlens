@@ -41,11 +41,11 @@ _SRC_DIR = _PROJECT_ROOT / "src"
 if str(_SRC_DIR) not in sys.path:
     sys.path.insert(0, str(_SRC_DIR))
 
-import argparse  # noqa: E402
+import argparse
 
-from churnlens.config import Settings  # noqa: E402
-from churnlens.data.loader import TelcoChurnLoader  # noqa: E402
-from churnlens.logger import get_logger  # noqa: E402
+from churnlens.config import Settings
+from churnlens.data.loader import TelcoChurnLoader
+from churnlens.logger import get_logger
 
 log = get_logger("scripts.data_acquisition")
 
@@ -102,7 +102,9 @@ def _build_settings(args: argparse.Namespace) -> Settings:
         # mientras que `data_dir` controla el directorio base.
         output = args.output
         overrides["raw_filename"] = output.name
-        overrides["data_dir"] = str(output.parent.parent) if output.parent.parent != Path() else str(output.parent)
+        overrides["data_dir"] = (
+            str(output.parent.parent) if output.parent.parent != Path() else str(output.parent)
+        )
 
     return Settings(**overrides) if overrides else Settings()
 

@@ -9,4 +9,4 @@ __version__ = "0.1.0"
 __author__ = "Jhon Gallego"
 __email__ = "jhgallegoa21@gmail.com"
 
-__all__ = ["__version__", "__author__", "__email__"]
+__all__ = ["__author__", "__email__", "__version__"]

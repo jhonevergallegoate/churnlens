@@ -28,9 +28,7 @@ def test_md5_known_value(tmp_path: Path) -> None:
 
 def test_sha256_known_value(tmp_path: Path) -> None:
     p = _write(tmp_path, b"hello world")
-    assert compute_sha256(p) == (
-        "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9"
-    )
+    assert compute_sha256(p) == ("b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9")
 
 
 def test_verify_md5_match(tmp_path: Path) -> None:

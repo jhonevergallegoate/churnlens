@@ -205,7 +205,7 @@ class TelcoChurnLoader:
         """Calcula el resumen ejecutivo del dataset crudo descargado."""
         df = self.load_validated()
         checksums = load_checksums(self.settings.checksums_path)
-        record = checksums.get(self.settings.raw_filename, {})
+        record: dict[str, object] = dict(checksums.get(self.settings.raw_filename, {}))
         return DataSummary(
             n_rows=int(len(df)),
             n_cols=int(df.shape[1]),
@@ -213,7 +213,7 @@ class TelcoChurnLoader:
             n_missing_total_charges=int(df["TotalCharges"].isna().sum()),
             md5=str(record.get("md5", "")),
             sha256=str(record.get("sha256", "")),
-            bytes=int(record.get("bytes", 0)),
+            bytes=int(record.get("bytes", 0)),  # type: ignore[call-overload]
         )
 
     # ------------------------------------------------------------------
