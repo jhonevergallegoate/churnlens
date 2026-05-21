@@ -7,9 +7,10 @@ formateo adicional.
 
 from __future__ import annotations
 
-from typing import Final
+from typing import Any, Final
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 
 from churnlens.features.preprocessing import TARGET_COL, binarize_target
@@ -170,7 +171,7 @@ def cramers_v_vs_target(
     return pd.Series(results, name="cramers_v").sort_values(ascending=False)
 
 
-def _cramers_v(contingency: np.ndarray) -> float:
+def _cramers_v(contingency: npt.NDArray[Any]) -> float:
     """Implementación interna de la V de Cramér con corrección de sesgo."""
     chi2 = _chi_square(contingency)
     n = contingency.sum()
@@ -187,7 +188,7 @@ def _cramers_v(contingency: np.ndarray) -> float:
     return float(np.sqrt(phi2_corr / denom))
 
 
-def _chi_square(contingency: np.ndarray) -> float:
+def _chi_square(contingency: npt.NDArray[Any]) -> float:
     """Estadístico chi-cuadrado de Pearson sobre una tabla de contingencia."""
     row_totals = contingency.sum(axis=1, keepdims=True)
     col_totals = contingency.sum(axis=0, keepdims=True)

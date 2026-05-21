@@ -19,9 +19,11 @@ import json
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 import joblib
-import numpy as np
+import numpy as np  # noqa: F401  (used implicitly via numpy.typing)
+import numpy.typing as npt
 import pandas as pd
 
 from churnlens.config import Settings
@@ -145,7 +147,7 @@ def run_preprocessing(
     )
 
 
-def _to_dataframe(arr: np.ndarray, feature_names: list[str], y: pd.Series) -> pd.DataFrame:
+def _to_dataframe(arr: npt.NDArray[Any], feature_names: list[str], y: pd.Series) -> pd.DataFrame:
     """Empaqueta una matriz transformada + target en un DataFrame parquet-ready."""
     df_out = pd.DataFrame(arr, columns=feature_names).astype("float32")
     df_out[TARGET_COL] = y.to_numpy().astype("int8")
