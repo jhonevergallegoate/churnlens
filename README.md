@@ -188,6 +188,9 @@ make preprocess                   # train/val/test parquet + preprocessor.joblib
 # Equivalentes vía CLI
 churnlens eda report
 churnlens preprocess run
+
+# Opcional: perfilado complementario con ydata-profiling (HTML, no versionado)
+make profile                      # genera reports/output/ydata_profiling.html
 ```
 
 ### Smoke-test

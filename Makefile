@@ -70,7 +70,7 @@ data-clean:  ## Elimina datos descargados (mantiene .gitkeep)
 # =====================================================================
 # Fase 2 — EDA + preprocesamiento
 # =====================================================================
-.PHONY: eda preprocess phase2
+.PHONY: eda preprocess phase2 profile
 eda:  ## Genera figuras y tablas del análisis exploratorio
 	$(PYTHON) scripts/eda/main.py
 
@@ -78,6 +78,16 @@ preprocess:  ## Ejecuta el pipeline de preprocesamiento y split (Fase 2)
 	$(PYTHON) scripts/preprocessing/main.py
 
 phase2: data eda preprocess  ## Pipeline completo de la Fase 2 (datos + EDA + preprocesamiento)
+
+profile:  ## Genera un perfilado complementario con ydata-profiling (HTML, no versionado)
+	$(PYTHON) -c "from pathlib import Path; \
+from ydata_profiling import ProfileReport; \
+from churnlens.data.loader import TelcoChurnLoader; \
+from churnlens.features.engineering import add_engineered_features; \
+df = add_engineered_features(TelcoChurnLoader().load_validated()); \
+out = Path('reports/output'); out.mkdir(parents=True, exist_ok=True); \
+ProfileReport(df, title='ChurnLens · ydata-profiling', explorative=True).to_file(out / 'ydata_profiling.html'); \
+print(f'Reporte HTML generado: {out / \"ydata_profiling.html\"}')"
 
 # =====================================================================
 # Calidad
