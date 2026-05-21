@@ -68,6 +68,18 @@ data-clean:  ## Elimina datos descargados (mantiene .gitkeep)
 	find $(DATA_DIR) -type f ! -name '.gitkeep' ! -name 'README.md' -delete
 
 # =====================================================================
+# Fase 2 — EDA + preprocesamiento
+# =====================================================================
+.PHONY: eda preprocess phase2
+eda:  ## Genera figuras y tablas del análisis exploratorio
+	$(PYTHON) scripts/eda/main.py
+
+preprocess:  ## Ejecuta el pipeline de preprocesamiento y split (Fase 2)
+	$(PYTHON) scripts/preprocessing/main.py
+
+phase2: data eda preprocess  ## Pipeline completo de la Fase 2 (datos + EDA + preprocesamiento)
+
+# =====================================================================
 # Calidad
 # =====================================================================
 .PHONY: lint format type-check test test-cov check

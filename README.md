@@ -1,17 +1,17 @@
 <div align="center">
 
 # ChurnLens
-### Predicción temprana de _churn_ en SaaS contable B2B para PyMEs
+### Predicción temprana de _churn_ en servicios por suscripción
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Methodology](https://img.shields.io/badge/Methodology-TDSP-1f6feb)](https://learn.microsoft.com/en-us/azure/architecture/data-science-process/overview)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000)](https://github.com/astral-sh/ruff)
 [![Type: mypy](https://img.shields.io/badge/types-mypy-2A6DB2)](https://mypy.readthedocs.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
-[![Status](https://img.shields.io/badge/Fase-1%20%C2%B7%20Entendimiento%20del%20negocio%20y%20carga%20de%20datos-success)](docs/business_understanding/project_charter.md)
+[![Status](https://img.shields.io/badge/Fase-2%20%C2%B7%20Preprocesamiento%20y%20EDA-success)](docs/data/data_summary_report.md)
 
 **Diplomado en _Machine Learning and Data Science_ (MLDS) — Universidad Nacional de Colombia**
-Módulo 6 · _Desarrollo de Aplicaciones con Machine Learning_ · Proyecto Aplicado · **Fase 1 (10 %)**
+Módulo 6 · _Desarrollo de Aplicaciones con Machine Learning_ · Proyecto Aplicado · **Fase 2 (10 %)**
 
 </div>
 
@@ -23,27 +23,36 @@ Módulo 6 · _Desarrollo de Aplicaciones con Machine Learning_ · Proyecto Aplic
 2. [Estructura del repositorio](#-estructura-del-repositorio)
 3. [Quickstart](#-quickstart)
 4. [Documentación de la Fase 1](#-documentación-de-la-fase-1)
-5. [Arquitectura de la solución](#%EF%B8%8F-arquitectura-de-la-solución)
-6. [Cronograma del proyecto](#-cronograma-del-proyecto)
-7. [Stack tecnológico](#-stack-tecnológico)
-8. [Buenas prácticas](#-buenas-prácticas)
-9. [Reproducibilidad](#-reproducibilidad)
-10. [Equipo](#-equipo)
-11. [Licencia](#-licencia)
+5. [Documentación de la Fase 2](#-documentación-de-la-fase-2)
+6. [Arquitectura de la solución](#%EF%B8%8F-arquitectura-de-la-solución)
+7. [Cronograma del proyecto](#-cronograma-del-proyecto)
+8. [Stack tecnológico](#-stack-tecnológico)
+9. [Buenas prácticas](#-buenas-prácticas)
+10. [Reproducibilidad](#-reproducibilidad)
+11. [Equipo](#-equipo)
+12. [Licencia](#-licencia)
 
 ---
 
 ## Resumen ejecutivo
 
-**ChurnLens** es un sistema de _machine learning_ orientado a la **predicción temprana de churn** (cancelación voluntaria de la suscripción) en un servicio **B2C/B2B basado en suscripción mensual**, modelado a partir del dataset público **_Telco Customer Churn_** (IBM, _Kaggle_).
+**ChurnLens** es un sistema de _machine learning_ orientado a la **predicción temprana de churn** (cancelación voluntaria de la suscripción) en un servicio **basado en suscripción mensual**, modelado a partir del dataset público **_Telco Customer Churn_** (IBM, _Kaggle_).
 
 El problema de negocio se aborda como un caso de **clasificación binaria supervisada**: dado un conjunto de atributos del cliente (demográficos, contractuales y de consumo de servicios), predecir la probabilidad de que ese cliente cancele su suscripción en el próximo ciclo de facturación, con el objetivo de priorizar acciones de retención sobre los clientes con mayor riesgo y mayor valor.
 
-El proyecto cumple con los tres entregables exigidos por la rúbrica de la Fase 1:
+El proyecto cumple con los entregables exigidos por las dos primeras rúbricas:
+
+**Fase 1 (10 %) — Entendimiento del negocio y carga de datos:**
 
 - 📄 **Marco del proyecto** completo (entendimiento del negocio, objetivos, alcance, métricas, cronograma).
 - 💻 **Código de carga de datos** funcional, validado y reproducible.
 - 📚 **Diccionarios de datos** detallados para las 21 variables del dataset.
+
+**Fase 2 (10 %) — Preprocesamiento y análisis exploratorio:**
+
+- 🔬 **Código de preprocesamiento y EDA** funcional, bien documentado, con buenas prácticas.
+- 📊 **Definición de los datos** extendida con _features_ derivadas y artefactos del pipeline.
+- 📝 **Reporte de resumen** con estadísticas descriptivas, visualizaciones y conclusiones clave.
 
 > **Hipótesis central de negocio:** Es posible identificar — con anticipación suficiente para activar una intervención comercial — a los clientes con mayor probabilidad de cancelar su suscripción, usando únicamente variables estructurales del cliente, su contrato y su consumo de servicios, generando un _lift_ accionable frente a una estrategia de retención no segmentada.
 
@@ -66,8 +75,9 @@ churnlens/
 │   │   └── glossary.md                #    ▸ Glosario bilingüe (ES/EN)
 │   ├── data/                          # 2. Datos
 │   │   ├── data_definition.md         #    ▸ Definición y origen de los datos
-│   │   ├── data_dictionary.md         #    ▸ Diccionario de datos (21 vars)
-│   │   └── data_quality_report.md     #    ▸ Reporte preliminar de calidad
+│   │   ├── data_dictionary.md         #    ▸ Diccionario de datos (21 vars + derivadas)
+│   │   ├── data_quality_report.md     #    ▸ Reporte preliminar de calidad
+│   │   └── data_summary_report.md     #    ▸ Reporte de resumen (Fase 2)
 │   ├── architecture/                  # 3. Arquitectura de la solución
 │   │   └── solution_architecture.md   #    ▸ Diagrama + componentes
 │   └── governance/                    # 4. Gobernanza
@@ -82,17 +92,26 @@ churnlens/
 │   │   ├── loader.py                  # Descarga y carga del dataset
 │   │   ├── schema.py                  # Esquemas Pandera para validación
 │   │   └── validators.py              # Reglas de calidad de datos
-│   ├── features/                      # (Fase 2) ingeniería de variables
+│   ├── features/                      # Ingeniería + preprocesamiento (Fase 2)
+│   │   ├── engineering.py             # Features derivadas (tenure_bucket, ...)
+│   │   ├── preprocessing.py           # ColumnTransformer sklearn
+│   │   ├── splits.py                  # Split estratificado 70/15/15
+│   │   └── pipeline.py                # Orquestador end-to-end
+│   ├── eda/                           # Análisis exploratorio (Fase 2)
+│   │   ├── summary.py                 # Estadísticas tabulares
+│   │   ├── plots.py                   # Visualizaciones reutilizables
+│   │   └── report.py                  # Orquestador de figuras + tablas
 │   └── utils/
 │       └── hashing.py                 # Utilidades de integridad (MD5/SHA256)
 ├── scripts/                           # Scripts ejecutables por fase TDSP
 │   ├── data_acquisition/main.py       # Script oficial de carga (Fase 1)
-│   ├── eda/main.py                    # (Fase 2)
-│   ├── preprocessing/main.py          # (Fase 2)
+│   ├── eda/main.py                    # Script oficial de EDA (Fase 2)
+│   ├── preprocessing/main.py          # Script oficial de preprocesamiento (Fase 2)
 │   ├── training/main.py               # (Fase 3)
 │   └── evaluation/main.py             # (Fase 3)
 ├── notebooks/
-│   └── 01_data_acquisition_eda.ipynb  # Carga + EDA inicial reproducible
+│   ├── 01_data_acquisition_eda.ipynb  # Carga + EDA inicial reproducible
+│   └── 02_eda_and_preprocessing.ipynb # EDA completo + preprocesamiento (Fase 2)
 ├── data/                              # Datos (ignorados por git, ver .gitignore)
 │   ├── raw/                           #   ▸ datos originales inmutables
 │   ├── interim/                       #   ▸ transformaciones intermedias
@@ -108,7 +127,7 @@ churnlens/
 └── README.md
 ```
 
-> 🧭 La carpeta `docs/business_understanding/`, los diccionarios bajo `docs/data/` y el script `scripts/data_acquisition/main.py` corresponden **exactamente** a los entregables exigidos por la rúbrica de la Fase 1 (ver [`r1`](docs/business_understanding/project_charter.md#rúbrica-y-cumplimiento)).
+> 🧭 La carpeta `docs/business_understanding/`, los diccionarios bajo `docs/data/` y el script `scripts/data_acquisition/main.py` corresponden **exactamente** a los entregables exigidos por la rúbrica de la Fase 1; los módulos `src/churnlens/features/`, `src/churnlens/eda/`, `docs/data/data_summary_report.md` y los scripts `scripts/preprocessing/main.py` y `scripts/eda/main.py` cubren los exigidos por la Fase 2.
 
 ---
 
@@ -138,7 +157,7 @@ pip install -e ".[notebooks,dev]"
 pre-commit install
 ```
 
-### Descarga y carga del dataset
+### Descarga y carga del dataset (Fase 1)
 
 ```bash
 # Atajo recomendado vía Makefile
@@ -154,6 +173,21 @@ O directamente con el script oficial:
 
 ```bash
 python scripts/data_acquisition/main.py
+```
+
+### EDA + preprocesamiento (Fase 2)
+
+```bash
+# Pipeline completo Fase 1 + Fase 2
+make phase2
+
+# Paso a paso
+make eda                          # 9 figuras + 4 tablas en reports/
+make preprocess                   # train/val/test parquet + preprocessor.joblib
+
+# Equivalentes vía CLI
+churnlens eda report
+churnlens preprocess run
 ```
 
 ### Smoke-test
@@ -184,6 +218,23 @@ Documentación complementaria (valor extra):
 - [Privacidad y cumplimiento](docs/governance/privacy_and_compliance.md)
 - [Model card (template)](docs/governance/model_card.md)
 - [Reporte de calidad de datos](docs/data/data_quality_report.md)
+
+---
+
+## Documentación de la Fase 2
+
+| Entregable de la rúbrica                              | Ubicación                                                                                                                                          |
+|-------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Código de preprocesamiento y EDA**                  | [`src/churnlens/features/`](src/churnlens/features/) + [`src/churnlens/eda/`](src/churnlens/eda/) + [`scripts/preprocessing/main.py`](scripts/preprocessing/main.py) + [`scripts/eda/main.py`](scripts/eda/main.py) |
+| **Definición de los datos** (extendida)               | [`docs/data/data_dictionary.md`](docs/data/data_dictionary.md) §6-7 + [`docs/data/data_definition.md`](docs/data/data_definition.md) §3.3, §5.4   |
+| **Reporte de resumen de los datos**                   | [`docs/data/data_summary_report.md`](docs/data/data_summary_report.md)                                                                            |
+
+Artefactos producidos:
+
+- **9 figuras** del EDA en `reports/figures/eda_*.png`.
+- **4 tablas** descriptivas en `reports/tables/eda_*.csv`.
+- **3 parquet** (train / val / test) + `preprocessor.joblib` + `metadata.json` en `data/processed/`.
+- **Notebook** narrativo en [`notebooks/02_eda_and_preprocessing.ipynb`](notebooks/02_eda_and_preprocessing.ipynb).
 
 ---
 

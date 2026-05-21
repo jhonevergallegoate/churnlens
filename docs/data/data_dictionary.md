@@ -5,7 +5,7 @@
 > **Columnas:** 21 (20 _features_ + 1 _target_)
 > **Granularidad:** un registro por cliente único (`customerID` es primary key sintético).
 > **Idioma original de las variables:** Inglés.
-> **Última actualización:** 2026-05-14.
+> **Última actualización:** 2026-05-20 (Fase 2 — features derivadas añadidas).
 
 ---
 
@@ -107,7 +107,45 @@ Existen relaciones condicionales entre algunas variables que deben respetarse du
 
 ---
 
-## 6. Referencias internas y externas
+## 6. Variables derivadas — Fase 2
+
+Las siguientes variables se generan en el pipeline de preprocesamiento
+(`src/churnlens/features/engineering.py::add_engineered_features`) y se
+añaden a la derecha del DataFrame validado sin modificar las originales.
+
+| #  | Variable             | Tipo                     | Definición operacional                                                                  | Hipótesis de negocio                                                          |
+|----|----------------------|--------------------------|------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------|
+| 22 | `tenure_bucket`      | `category` ordinal       | `pd.cut(tenure, bins=[-1, 12, 24, 48, 72])`, etiquetas: `0-12m`, `13-24m`, `25-48m`, `49-72m`. | Resume la no-linealidad observada del riesgo de churn vs antigüedad.            |
+| 23 | `services_count`     | `int8` ∈ `[0, 8]`        | Conteo de servicios y add-ons con valor `"Yes"`.                                          | _Proxy_ de _lock-in_: a más servicios contratados, mayor el costo de cambio.    |
+| 24 | `has_internet`       | `bool`                   | `InternetService != "No"`.                                                                | Bandera explícita para árboles y reglas legibles.                              |
+| 25 | `has_phone`          | `bool`                   | `PhoneService == "Yes"`.                                                                  | Idem para servicio telefónico.                                                  |
+| 26 | `auto_payment`       | `bool`                   | `PaymentMethod ∈ {"Bank transfer (automatic)", "Credit card (automatic)"}`.               | Captura la fricción mecánica del pago automático.                              |
+| 27 | `avg_monthly_spend`  | `float32`                | `TotalCharges / max(tenure, 1)`.                                                          | Permite detectar cambios de plan a lo largo de la antigüedad.                  |
+| 28 | `monthly_spend_gap`  | `float32`                | `MonthlyCharges - avg_monthly_spend`.                                                     | Captura _upsell_ (positivo) o _downsell_ (negativo) reciente.                  |
+
+> **Reproducibilidad:** estas columnas se generan determinísticamente a
+> partir del esquema validado, no introducen randomness y son
+> independientes del split.
+
+---
+
+## 7. Artefactos del pipeline de preprocesamiento
+
+| Archivo                                              | Contenido                                              |
+|------------------------------------------------------|--------------------------------------------------------|
+| `data/processed/train.parquet`                       | 4 929 filas × 36 cols (35 features + target binario).   |
+| `data/processed/val.parquet`                         | 1 057 filas × 36 cols.                                  |
+| `data/processed/test.parquet`                        | 1 057 filas × 36 cols.                                  |
+| `data/processed/preprocessor.joblib`                 | `ColumnTransformer` ajustado a `train`.                 |
+| `data/processed/feature_names.json`                  | Nombres de columna post-transformación.                 |
+| `data/processed/metadata.json`                       | Manifest del split: shapes, tasa de positivos, semilla. |
+
+El _target_ binarizado en los parquet usa la convención `Churn = 1` ↔ `Yes`,
+`Churn = 0` ↔ `No` (ver `churnlens.features.preprocessing.binarize_target`).
+
+---
+
+## 8. Referencias internas y externas
 
 - Origen, licencia y procedencia del dataset → ver [`data_definition.md`](data_definition.md).
 - Reglas de validación implementadas → ver [`src/churnlens/data/schema.py`](../../src/churnlens/data/schema.py).

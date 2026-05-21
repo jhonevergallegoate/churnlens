@@ -69,6 +69,8 @@ data/external/*
 # --- Reports & artifacts ---
 reports/figures/*
 !reports/figures/.gitkeep
+reports/tables/*
+!reports/tables/.gitkeep
 reports/output/
 mlruns/
 mlartifacts/

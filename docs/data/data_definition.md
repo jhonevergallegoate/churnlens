@@ -119,6 +119,19 @@ churnlens data hash       # imprime MD5 del archivo crudo
 | `data/interim/telco_customer_churn.parquet`      | Dataset validado y con tipos estables (parquet con compresión `snappy`). |
 | `data/raw/.checksums.json`                       | Hashes MD5 + SHA-256 del archivo crudo (auditoría de integridad).      |
 
+### 3.3 Archivos generados por la Fase 2
+
+| Archivo                                          | Contenido                                                              |
+|--------------------------------------------------|------------------------------------------------------------------------|
+| `data/processed/train.parquet`                   | 4 929 filas — partición de entrenamiento (70 %).                       |
+| `data/processed/val.parquet`                     | 1 057 filas — partición de validación (15 %).                          |
+| `data/processed/test.parquet`                    | 1 057 filas — partición de prueba (15 %).                              |
+| `data/processed/preprocessor.joblib`             | `ColumnTransformer` de scikit-learn ajustado **solo** a `train`.       |
+| `data/processed/feature_names.json`              | Nombres de columna post-transformación (35 features).                  |
+| `data/processed/metadata.json`                   | Shapes, tasa de positivos por split, semilla, fecha de generación.     |
+| `reports/figures/eda_*.png`                      | 9 figuras del análisis exploratorio.                                    |
+| `reports/tables/eda_*.csv`                       | 4 tablas (resumen numérico, categórico, V de Cramér, distribución target).|
+
 ---
 
 ## 4. Esquema técnico del archivo crudo
@@ -194,6 +207,38 @@ En la Fase 1 **no se imputa** ningún valor faltante. La razón:
 - La imputación es una decisión de modelado que debe quedar trazada como _step_ del pipeline reproducible (Fase 2).
 - Imputar antes de explorar puede ocultar señales informativas (un `TotalCharges = NaN` siempre coincide con `tenure = 0`, lo cual es _informativo_ en sí mismo).
 
+### 5.4 Pipeline de preprocesamiento — Fase 2
+
+A partir de la Fase 2, sobre el dataset validado se aplica un
+`ColumnTransformer` reproducible (`src/churnlens/features/preprocessing.py`)
+con cuatro bloques:
+
+```
+1. Numéricas continuas (`tenure`, `MonthlyCharges`, `TotalCharges` + derivadas):
+     SimpleImputer(strategy="median") → StandardScaler()
+2. Ordinales (`Contract`, `tenure_bucket`):
+     OrdinalEncoder con orden explícito
+3. Binarias (`gender`, `Partner`, `Dependents`, `PhoneService`, `PaperlessBilling`
+   + booleanos derivados):
+     OrdinalEncoder con orden fijo
+4. Nominales multi-clase (`MultipleLines`, `InternetService`, 6 add-ons, `PaymentMethod`):
+     OneHotEncoder(drop="first", handle_unknown="ignore")
+```
+
+El _transformer_ se **ajusta exclusivamente** sobre el conjunto de
+entrenamiento (estratificado, 70 %) y se aplica a `val` (15 %) y `test`
+(15 %), garantizando ausencia de _leakage_. Persiste serializado como
+`preprocessor.joblib` para inferencia futura.
+
+Antes del transformador, las **features derivadas** (`tenure_bucket`,
+`services_count`, `has_internet`, `has_phone`, `auto_payment`,
+`avg_monthly_spend`, `monthly_spend_gap`) se generan determinísticamente
+desde el esquema validado en
+`src/churnlens/features/engineering.py::add_engineered_features`.
+
+Ver justificación de cada decisión en
+[`data_summary_report.md`](data_summary_report.md) §9.
+
 ---
 
 ## 6. Base de datos de destino
@@ -236,9 +281,16 @@ En esta versión del proyecto **no se utiliza un sistema de gestión de bases de
 
 - [`data_dictionary.md`](data_dictionary.md) — diccionario detallado por variable.
 - [`data_quality_report.md`](data_quality_report.md) — reporte preliminar de calidad.
+- [`data_summary_report.md`](data_summary_report.md) — reporte de resumen Fase 2.
 - [`src/churnlens/data/loader.py`](../../src/churnlens/data/loader.py) — implementación del _loader_.
 - [`src/churnlens/data/schema.py`](../../src/churnlens/data/schema.py) — esquema Pandera.
-- [`scripts/data_acquisition/main.py`](../../scripts/data_acquisition/main.py) — punto de entrada TDSP.
+- [`src/churnlens/features/engineering.py`](../../src/churnlens/features/engineering.py) — features derivadas Fase 2.
+- [`src/churnlens/features/preprocessing.py`](../../src/churnlens/features/preprocessing.py) — `ColumnTransformer` Fase 2.
+- [`src/churnlens/features/pipeline.py`](../../src/churnlens/features/pipeline.py) — orquestador end-to-end Fase 2.
+- [`src/churnlens/eda/`](../../src/churnlens/eda/) — estadísticas y visualizaciones Fase 2.
+- [`scripts/data_acquisition/main.py`](../../scripts/data_acquisition/main.py) — punto de entrada TDSP Fase 1.
+- [`scripts/preprocessing/main.py`](../../scripts/preprocessing/main.py) — punto de entrada TDSP Fase 2.
+- [`scripts/eda/main.py`](../../scripts/eda/main.py) — punto de entrada TDSP Fase 2.
 
 ---
 
