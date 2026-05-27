@@ -8,10 +8,10 @@
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000)](https://github.com/astral-sh/ruff)
 [![Type: mypy](https://img.shields.io/badge/types-mypy-2A6DB2)](https://mypy.readthedocs.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
-[![Status](https://img.shields.io/badge/Fase-2%20%C2%B7%20Preprocesamiento%20y%20EDA-success)](docs/data/data_summary_report.md)
+[![Status](https://img.shields.io/badge/Fase-3%20%C2%B7%20Modelamiento-success)](docs/modeling/final_model_report.md)
 
 **Diplomado en _Machine Learning and Data Science_ (MLDS) — Universidad Nacional de Colombia**
-Módulo 6 · _Desarrollo de Aplicaciones con Machine Learning_ · Proyecto Aplicado · **Fase 2 (10 %)**
+Módulo 6 · _Desarrollo de Aplicaciones con Machine Learning_ · Proyecto Aplicado · **Fase 3 (10 %)**
 
 </div>
 
@@ -24,8 +24,9 @@ Módulo 6 · _Desarrollo de Aplicaciones con Machine Learning_ · Proyecto Aplic
 3. [Quickstart](#-quickstart)
 4. [Documentación de la Fase 1](#-documentación-de-la-fase-1)
 5. [Documentación de la Fase 2](#-documentación-de-la-fase-2)
-6. [Arquitectura de la solución](#%EF%B8%8F-arquitectura-de-la-solución)
-7. [Cronograma del proyecto](#-cronograma-del-proyecto)
+6. [Documentación de la Fase 3](#-documentación-de-la-fase-3)
+7. [Arquitectura de la solución](#%EF%B8%8F-arquitectura-de-la-solución)
+8. [Cronograma del proyecto](#-cronograma-del-proyecto)
 8. [Stack tecnológico](#-stack-tecnológico)
 9. [Buenas prácticas](#-buenas-prácticas)
 10. [Reproducibilidad](#-reproducibilidad)
@@ -53,6 +54,13 @@ El proyecto cumple con los entregables exigidos por las dos primeras rúbricas:
 - 🔬 **Código de preprocesamiento y EDA** funcional, bien documentado, con buenas prácticas.
 - 📊 **Definición de los datos** extendida con _features_ derivadas y artefactos del pipeline.
 - 📝 **Reporte de resumen** con estadísticas descriptivas, visualizaciones y conclusiones clave.
+
+**Fase 3 (10 %) — Modelamiento y extracción de características:**
+
+- 🧪 **Código de extracción de características** con cuatro técnicas complementarias (Mutual Information + χ² + L1-LogReg + Permutation Importance) y consenso top-k.
+- 🤖 **Código de modelamiento** con un catálogo de 8 estimadores (3 dummies + LogReg balanced + LogReg-L1 + Random Forest + HistGradientBoosting + LightGBM) entrenados con CV estratificada 5-fold.
+- 📐 **Reporte de línea base** comparando los baselines (DummyClassifier × 3 + LogReg balanced) contra los modelos no triviales.
+- 🏆 **Reporte del modelo final** con métricas, _threshold tuning_, curvas de calibración y matriz de confusión.
 
 > **Hipótesis central de negocio:** Es posible identificar — con anticipación suficiente para activar una intervención comercial — a los clientes con mayor probabilidad de cancelar su suscripción, usando únicamente variables estructurales del cliente, su contrato y su consumo de servicios, generando un _lift_ accionable frente a una estrategia de retención no segmentada.
 
@@ -193,6 +201,25 @@ churnlens preprocess run
 make profile                      # genera reports/output/ydata_profiling.html
 ```
 
+### Selección de features + modelado (Fase 3)
+
+```bash
+# Pipeline completo Fase 3 (selección + entrenamiento + evaluación)
+make phase3
+
+# Paso a paso
+make features                     # 4 técnicas + consenso top-k → reports/tables/
+make train                        # 8 modelos con CV 5-fold → models/ + summary
+make evaluate                     # reporte del ganador → reports/figures/
+
+# Equivalentes vía CLI
+churnlens features select --k 20
+churnlens model train --cv 5
+churnlens model train --baselines-only        # atajo para línea base
+churnlens model evaluate --model lightgbm --split val
+churnlens model list
+```
+
 ### Smoke-test
 
 ```bash
@@ -238,6 +265,26 @@ Artefactos producidos:
 - **4 tablas** descriptivas en `reports/tables/eda_*.csv`.
 - **3 parquet** (train / val / test) + `preprocessor.joblib` + `metadata.json` en `data/processed/`.
 - **Notebook** narrativo en [`notebooks/02_eda_and_preprocessing.ipynb`](notebooks/02_eda_and_preprocessing.ipynb).
+
+---
+
+## Documentación de la Fase 3
+
+| Entregable de la rúbrica                              | Ubicación                                                                                                                                          |
+|-------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Código de extracción de características**           | [`src/churnlens/features/selection.py`](src/churnlens/features/selection.py)                                                                       |
+| **Código del modelamiento**                           | [`src/churnlens/models/`](src/churnlens/models/) + [`scripts/training/main.py`](scripts/training/main.py) + [`scripts/evaluation/main.py`](scripts/evaluation/main.py) |
+| **Reporte de línea base de los modelos**              | [`docs/modeling/baseline_models.md`](docs/modeling/baseline_models.md)                                                                             |
+| **Reporte del modelo final**                          | [`docs/modeling/final_model_report.md`](docs/modeling/final_model_report.md)                                                                        |
+| **Reporte de selección de features** _(extra)_        | [`docs/modeling/feature_selection.md`](docs/modeling/feature_selection.md)                                                                          |
+
+Artefactos producidos:
+
+- **Tablas** de selección, CV y comparativa: `reports/tables/feature_selection_*.csv`, `reports/tables/modeling_*.csv`, `reports/tables/evaluation_*.csv`.
+- **Figuras** de modelado y evaluación: `reports/figures/modeling_pr_curves_val.png`, `modeling_roc_curves_val.png`, `modeling_threshold_sweep_*.png`, `evaluation_calibration_*.png`, `evaluation_confusion_*.png`, `evaluation_importance_*.png`.
+- **Modelos persistidos** + manifiestos auditados (`hash_train`, `hash_val`, `hash_model`) en `models/<name>.joblib` + `models/<name>.metadata.json`.
+- **Manifest de selección** consumible por `train_models(feature_subset=...)` en `data/processed/feature_consensus.json`.
+- **Notebook** narrativo en [`notebooks/03_modeling_and_evaluation.ipynb`](notebooks/03_modeling_and_evaluation.ipynb).
 
 ---
 
