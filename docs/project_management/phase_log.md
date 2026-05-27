@@ -118,3 +118,103 @@
 - Benchmark de modelos lineales + árboles + GBM con validación cruzada estratificada.
 - Calibración del _threshold_ para la métrica de negocio.
 - Reporte de fairness por subgrupos (gender, SeniorCitizen).
+
+---
+
+## Fase 3 · Modelamiento y extracción de características · _10 %_
+
+### 2026-05-27 — _Entrega Fase 3_
+
+**Estado:** ✅ entregable completo.
+
+**Hitos del día:**
+
+- Implementación del módulo [`src/churnlens/features/selection.py`](../../src/churnlens/features/selection.py)
+  con **cuatro técnicas complementarias** de selección y consolidación
+  por consenso top-k:
+  - Mutual Information (filtro univariado no lineal).
+  - χ² (filtro categórico, omite numéricas escaladas).
+  - L1 Logistic Regression (embedded, `class_weight=balanced`).
+  - Permutation Importance sobre RandomForest (wrapper, scoring PR-AUC).
+- Implementación del subpaquete [`src/churnlens/models/`](../../src/churnlens/models/):
+  - `baseline.py` — Dummy {stratified, most_frequent, prior} + LogReg balanced.
+  - `evaluation.py` — métricas (PR-AUC, ROC-AUC, F1, recall, precision,
+    Brier, lift@10 %), _threshold tuning_ por F1, plots PR/ROC/CM/
+    calibración/importancia/threshold-sweep.
+  - `registry.py` — persistencia con manifest auditado (`hash_train`,
+    `hash_val`, `hash_model`, métricas train/val/cv, hiperparámetros).
+  - `train.py` — orquestador con catálogo de 8 modelos
+    (`dummy_*`, `logreg_balanced`, `logreg_l1`, `random_forest`,
+    `hist_gb`, `lightgbm`), CV estratificada 5-fold sobre PR-AUC y
+    ROC-AUC, fit final en `train`, threshold tuning en `val`, save al
+    registro.
+- Extensión de la CLI con `churnlens features select`,
+  `churnlens model train`, `churnlens model evaluate`, `churnlens model list`.
+- Reemplazo de los _stubs_ [`scripts/training/main.py`](../../scripts/training/main.py) y
+  [`scripts/evaluation/main.py`](../../scripts/evaluation/main.py)
+  por orquestadores reales que reproducen la entrega byte-equivalente.
+- Tres reportes Markdown nuevos en [`docs/modeling/`](../modeling/):
+  - [`feature_selection.md`](../modeling/feature_selection.md) — justificación + top-20 consenso.
+  - [`baseline_models.md`](../modeling/baseline_models.md) — comparativa CV + val (8 modelos).
+  - [`final_model_report.md`](../modeling/final_model_report.md) — descripción detallada del ganador.
+- Notebook narrativo [`notebooks/03_modeling_and_evaluation.ipynb`](../../notebooks/03_modeling_and_evaluation.ipynb).
+- Suite de tests extendida (~30 tests nuevos) cubriendo selección,
+  baseline, evaluación, registry y entrenamiento end-to-end con datos
+  sintéticos.
+- Pipeline de CI extendido con job `smoke-test-phase3` que entrena un
+  subset rápido (baselines + LightGBM, CV 3-fold) y verifica todos los
+  artefactos esperados.
+- Dependencia nueva: `lightgbm>=4.3` añadida a `pyproject.toml`.
+
+**Decisiones clave de la fase:**
+
+- **Métrica primaria = PR-AUC**, no ROC-AUC, por el desbalance 26.5 %
+  (la PR-AUC es más sensible al rendimiento sobre la clase positiva).
+- **Threshold sintonizado maximizando F1 sobre `val`** — balance entre
+  precision (no quemar inversión en retención) y recall (no perder
+  cancelaciones).
+- **`cross_val_score(n_jobs=1)`** dentro de la CV porque los modelos
+  internos (RF, HGB, LightGBM) ya usan `n_jobs=-1`. Sin esto, se crean
+  `n_cores²` workers y el sistema entra en _live-lock_ con LightGBM.
+- **Modelo final = `logreg_l1`** por principio de parsimonia: empate
+  estadístico con `logreg_balanced` (Δ ≤ 0.0001 PR-AUC en CV y val), 8
+  de 35 features apagadas automáticamente por la regularización L1,
+  interpretabilidad equivalente.
+- **El consenso top-20 se calcula pero no se aplica al ganador** porque
+  L1 ya implementa selección embedded y reproduce el mismo subset. El
+  manifest queda disponible para futuros modelos que no esparsen
+  naturalmente (RF, GBM).
+- **`test.parquet` queda intocado** — se evalúa solo en Fase 4 para
+  evitar _data leakage_ por _threshold tuning_ implícito.
+
+**Resultados clave (números reales sobre `val`):**
+
+| Modelo            | PR-AUC val | ROC-AUC val | F1 tuned | thr |
+|-------------------|-----------:|------------:|---------:|----:|
+| **`logreg_l1`** ★ | **0.6293** | **0.8286**  | **0.6390** | 0.58 |
+| `logreg_balanced` | 0.6290     | 0.8286      | 0.6379   | 0.58 |
+| `random_forest`   | 0.6131     | 0.8241      | 0.6154   | 0.27 |
+| `lightgbm`        | 0.6113     | 0.8176      | 0.6071   | 0.35 |
+| `hist_gb`         | 0.6103     | 0.8208      | 0.6091   | 0.48 |
+| `dummy_prior`     | 0.2658     | 0.5000      | 0.4200   | 0.05 |
+
+- Lift @ top 10 % del ganador: **2.70 ×** vs base rate 0.266.
+- Mejor modelo no lineal (RF) **no supera** al baseline lineal real.
+- Top-5 coeficientes coinciden con top-5 consenso de selección.
+
+**Workflow operativo introducido en esta fase:**
+
+- Rama `dev` para desarrollo libre, `main` protegida con branch
+  protection (requiere PR, sin force push, sin deletion).
+- Cuenta gh activa para el proyecto: `jhonevergallegoate` con email
+  `jhgallegoa21@gmail.com` (separación profesional/académico
+  preservada).
+
+### Próximos pasos (Fase 4)
+
+- Evaluación sobre `test.parquet` y reporte definitivo held-out.
+- Calibración isotónica si Brier > 0.18 en test.
+- _Fairness audit_ por `gender` y `SeniorCitizen` (paridad de recall y
+  precision por subgrupo).
+- API REST + monitoreo de _data drift_, alertas por degradación de PR-AUC.
+- Plan de re-entrenamiento periódico.

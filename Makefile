@@ -79,6 +79,21 @@ preprocess:  ## Ejecuta el pipeline de preprocesamiento y split (Fase 2)
 
 phase2: data eda preprocess  ## Pipeline completo de la Fase 2 (datos + EDA + preprocesamiento)
 
+# =====================================================================
+# Fase 3 — modelado
+# =====================================================================
+.PHONY: features train evaluate phase3
+features:  ## Ejecuta las cuatro técnicas de selección y persiste el consenso
+	$(PYTHON) -m churnlens.cli features select
+
+train:  ## Selección + entrenamiento de todos los modelos (Fase 3)
+	$(PYTHON) scripts/training/main.py
+
+evaluate:  ## Genera el reporte de evaluación del modelo ganador
+	$(PYTHON) scripts/evaluation/main.py
+
+phase3: preprocess features train evaluate  ## Pipeline completo de la Fase 3
+
 profile:  ## Genera un perfilado complementario con ydata-profiling (HTML, no versionado)
 	$(PYTHON) -c "from pathlib import Path; \
 from ydata_profiling import ProfileReport; \
