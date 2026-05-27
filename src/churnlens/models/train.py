@@ -33,6 +33,7 @@ from typing import Any
 
 import lightgbm as lgb
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 from sklearn.dummy import DummyClassifier
 from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
@@ -203,7 +204,7 @@ def _serialize_hparams(estimator: Any) -> dict[str, Any]:
     return out
 
 
-def _predict_proba(estimator: Any, x: np.ndarray) -> np.ndarray:
+def _predict_proba(estimator: Any, x: npt.NDArray[Any]) -> npt.NDArray[Any]:
     """Devuelve la probabilidad de la clase positiva si está disponible.
 
     Para modelos sin ``predict_proba`` cae a ``decision_function`` o a
@@ -222,7 +223,12 @@ def _predict_proba(estimator: Any, x: np.ndarray) -> np.ndarray:
 
 
 def _cv_pr_auc(
-    estimator: Any, x: np.ndarray, y: np.ndarray, *, cv: int, seed: int
+    estimator: Any,
+    x: npt.NDArray[Any],
+    y: npt.NDArray[Any],
+    *,
+    cv: int,
+    seed: int,
 ) -> tuple[float, float, float, float]:
     """Devuelve (pr_auc_mean, pr_auc_std, roc_auc_mean, roc_auc_std) en CV.
 
@@ -323,7 +329,7 @@ def train_models(  # noqa: PLR0915 - orquestador legible end-to-end, no se divid
     cv_rows: list[dict[str, Any]] = []
     sweeps: dict[str, pd.DataFrame] = {}
     entries: dict[str, ModelEntry] = {}
-    pr_runs: dict[str, tuple[np.ndarray, np.ndarray]] = {}
+    pr_runs: dict[str, tuple[npt.NDArray[Any], npt.NDArray[Any]]] = {}
 
     x_train_arr = x_train.to_numpy(dtype="float32")
     y_train_arr = y_train.to_numpy(dtype="int8")
