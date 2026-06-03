@@ -56,7 +56,39 @@ class Settings(BaseSettings):
     # Rutas
     # ------------------------------------------------------------------
     project_root: Path = Field(default=PROJECT_ROOT)
-    data_dir: Path = Field(default=PROJECT_ROOT / "data")
+    data_dir: Path = Field(default=PROJECT_ROOT / "data", alias="CHURNLENS_DATA_DIR")
+    models_dir: Path = Field(
+        default=PROJECT_ROOT / "models",
+        alias="CHURNLENS_MODELS_DIR",
+        description="Directorio del registro local de modelos.",
+    )
+
+    # ------------------------------------------------------------------
+    # Serving (Fase 4)
+    # ------------------------------------------------------------------
+    serving_model_name: str = Field(
+        default="logreg_l1",
+        alias="CHURNLENS_SERVING_MODEL",
+        description="Nombre del modelo registrado que expone la API de inferencia.",
+    )
+    serving_threshold: float | None = Field(
+        default=None,
+        alias="CHURNLENS_SERVING_THRESHOLD",
+        description=(
+            "Threshold de decisión de la API. Si es None (default), se usa el "
+            "threshold sintonizado registrado en el manifiesto del modelo."
+        ),
+    )
+    api_host: str = Field(
+        default="127.0.0.1",
+        alias="CHURNLENS_API_HOST",
+        description="Interfaz de red donde escucha la API (0.0.0.0 en contenedores).",
+    )
+    api_port: int = Field(
+        default=8000,
+        alias="CHURNLENS_API_PORT",
+        description="Puerto HTTP de la API de inferencia.",
+    )
 
     # ------------------------------------------------------------------
     # Reproducibilidad
@@ -71,6 +103,9 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
+        # Permite construir Settings(data_dir=...) por nombre de campo
+        # además de por alias de entorno (CHURNLENS_DATA_DIR).
+        populate_by_name=True,
     )
 
     # ------------------------------------------------------------------
@@ -128,6 +163,14 @@ class Settings(BaseSettings):
             msg = f"log_format inválido: {v!r}. Debe ser 'console' o 'json'."
             raise ValueError(msg)
         return v_lower
+
+    @field_validator("serving_threshold")
+    @classmethod
+    def _validate_serving_threshold(cls, v: float | None) -> float | None:
+        if v is not None and not 0.0 < v < 1.0:
+            msg = f"serving_threshold inválido: {v!r}. Debe estar en el intervalo (0, 1)."
+            raise ValueError(msg)
+        return v
 
     def ensure_data_dirs(self) -> None:
         """Crea las carpetas estándar de datos si no existen."""

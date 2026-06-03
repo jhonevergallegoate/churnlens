@@ -1,0 +1,48 @@
+# =====================================================================
+# ChurnLens — orquestación local / single-host de la API de inferencia
+#
+#   docker compose up --build -d     # build + arranque con healthcheck
+#   curl http://localhost:8000/health
+#   docker compose down
+#
+# Para escalar horizontalmente detrás de un balanceador:
+#   docker compose up -d --scale churnlens-api=3   (quitar container_name
+#   y publicar puertos por rango o usar un reverse proxy).
+# =====================================================================
+services:
+  churnlens-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: churnlens-api:0.3.0
+    container_name: churnlens-api
+    ports:
+      - "8000:8000"
+    environment:
+      LOG_LEVEL: INFO
+      LOG_FORMAT: json
+      # Overrides opcionales (defaults: modelo logreg_l1, threshold 0.58
+      # sintonizado en Fase 3 — ver docs/deployment/deploymentdoc.md):
+      # CHURNLENS_SERVING_MODEL: logreg_l1
+      # CHURNLENS_SERVING_THRESHOLD: "0.58"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)",
+        ]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    # Presupuesto de recursos del servicio (ver docs/deployment/infrastructure.md):
+    # el modelo es una regresión logística — 512 MB y 1 vCPU son suficientes
+    # para ~100 req/s con 2 workers de uvicorn.
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M

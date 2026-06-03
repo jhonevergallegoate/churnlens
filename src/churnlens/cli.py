@@ -19,6 +19,7 @@ churnlens features select       [--k 20]
 churnlens model train           [--model NAME] [--cv 5] [--use-consensus]
 churnlens model evaluate        [--model NAME] [--split val|test] [--threshold 0.5]
 churnlens model list
+churnlens serve                 [--host 127.0.0.1] [--port 8000] [--workers 1] [--reload]
 ```
 """
 
@@ -458,6 +459,44 @@ def cmd_model_list() -> None:
             entry.created_at,
         )
     console.print(table)
+
+
+# ---------------------------------------------------------------------------
+# Comando `serve` (Fase 4)
+# ---------------------------------------------------------------------------
+@app.command()
+def serve(
+    host: Annotated[
+        str,
+        typer.Option("--host", help="Interfaz de red donde escucha la API."),
+    ] = settings.api_host,
+    port: Annotated[
+        int,
+        typer.Option("--port", help="Puerto HTTP de la API."),
+    ] = settings.api_port,
+    workers: Annotated[
+        int,
+        typer.Option("--workers", help="Número de procesos uvicorn (producción)."),
+    ] = 1,
+    reload: Annotated[
+        bool,
+        typer.Option("--reload", help="Auto-reload al cambiar código (solo desarrollo)."),
+    ] = False,
+) -> None:
+    """Levanta la API de inferencia FastAPI (Fase 4)."""
+    import uvicorn
+
+    console.print(
+        f"[green]✓[/green] ChurnLens API en [bold]http://{host}:{port}[/bold] "
+        f"(docs en [bold]http://{host}:{port}/docs[/bold])"
+    )
+    uvicorn.run(
+        "churnlens.serving.api:app",
+        host=host,
+        port=port,
+        workers=workers,
+        reload=reload,
+    )
 
 
 # ---------------------------------------------------------------------------

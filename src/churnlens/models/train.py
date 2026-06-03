@@ -291,7 +291,7 @@ def train_models(  # noqa: PLR0915 - orquestador legible end-to-end, no se divid
         )
         raise FileNotFoundError(msg)
 
-    models_dir_p = Path(models_dir) if models_dir else default_settings.project_root / "models"
+    models_dir_p = Path(models_dir) if models_dir else default_settings.models_dir
     tables_dir_p = (
         Path(tables_dir) if tables_dir else default_settings.project_root / "reports" / "tables"
     )

@@ -11,9 +11,16 @@ Convención: todos los entrenamientos consumen los `*.parquet` producidos por
 la Fase 2 (`data/processed/`), nunca el CSV crudo. La estratificación, el
 escalado y el codificado ya están aplicados; aquí solo se entrena, evalúa
 y compara.
+
+Nota de despliegue (Fase 4): los símbolos de :mod:`churnlens.models.train`
+se cargan de forma **perezosa** (PEP 562) porque ese módulo importa LightGBM
+y otras dependencias de entrenamiento que no existen (ni deben pesar) en la
+imagen de producción — el serving solo necesita :mod:`registry`.
 """
 
 from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 
 from churnlens.models.baseline import (
     BASELINE_MODEL_NAMES,
@@ -31,11 +38,26 @@ from churnlens.models.registry import (
     load_model,
     save_model,
 )
-from churnlens.models.train import (
-    MODEL_SPECS,
-    TrainingArtifacts,
-    train_models,
-)
+
+if TYPE_CHECKING:
+    from churnlens.models.train import (
+        MODEL_SPECS,
+        TrainingArtifacts,
+        train_models,
+    )
+
+_TRAIN_EXPORTS = frozenset({"MODEL_SPECS", "TrainingArtifacts", "train_models"})
+
+
+def __getattr__(name: str) -> Any:
+    """Carga perezosa de `churnlens.models.train` (PEP 562)."""
+    if name in _TRAIN_EXPORTS:
+        from churnlens.models import train
+
+        return getattr(train, name)
+    msg = f"module {__name__!r} has no attribute {name!r}"
+    raise AttributeError(msg)
+
 
 __all__ = [
     "BASELINE_MODEL_NAMES",
