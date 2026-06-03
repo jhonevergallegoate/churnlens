@@ -218,3 +218,104 @@
   precision por subgrupo).
 - API REST + monitoreo de _data drift_, alertas por degradación de PR-AUC.
 - Plan de re-entrenamiento periódico.
+
+---
+
+## Fase 4 · Despliegue · _10 %_
+
+### 2026-06-03 — _Entrega Fase 4_
+
+**Estado:** ✅ entregable completo.
+
+**Hitos del día:**
+
+- Implementación del subpaquete [`src/churnlens/serving/`](../../src/churnlens/serving/):
+  - `schemas.py` — contratos Pydantic de entrada/salida, espejo exacto del
+    [data dictionary](../data/data_dictionary.md) (dominios cerrados con
+    `Literal`, rangos, `extra="forbid"`) **+ las dos reglas de integridad
+    cruzada del esquema Pandera replicadas como validadores** (payloads
+    fuera de contrato → `422`).
+  - `service.py` — `ChurnScorer`: pipeline de inferencia completo (features
+    derivadas → `ColumnTransformer` de Fase 2 → `logreg_l1` → threshold
+    0.58), con carga única de artefactos en el startup.
+  - `api.py` — FastAPI con `GET /health`, `GET /metadata`,
+    `POST /predict`, `POST /predict/batch` (≤ 1 000 clientes), middleware
+    de latencia (`X-Process-Time-Ms`), OpenAPI en `/docs`.
+- Extensión de la CLI con `churnlens serve` (uvicorn con host/port/workers
+  configurables vía `Settings`).
+- Script TDSP oficial [`scripts/deployment/main.py`](../../scripts/deployment/main.py):
+  smoke E2E in-process de los 4 endpoints (+ caso 422), con evidencia
+  persistida en `reports/tables/deployment_smoke.json` y modo
+  `--ensure-artifacts` que reconstruye datos + preprocesador + modelo.
+- [`Dockerfile`](../../Dockerfile) **multi-stage reproducible**: la etapa
+  builder descarga el dataset (checksum), ajusta el preprocesador y entrena
+  `logreg_l1` desde cero (semilla 42); la etapa runtime es
+  `python:3.12-slim` + usuario no-root + `HEALTHCHECK` + uvicorn ×2 workers.
+  Verificado: la imagen reconstruida produce **probabilidades
+  byte-equivalentes** a las del entrenamiento local (p = 0.868361 para el
+  payload de referencia).
+- [`docker-compose.yml`](../../docker-compose.yml) con healthcheck, límites
+  de recursos (1 vCPU / 512 MB) y notas de escalado horizontal.
+- Dos documentos nuevos en [`docs/deployment/`](../deployment/):
+  - [`deploymentdoc.md`](../deployment/deploymentdoc.md) — estructura del
+    template TDSP: infraestructura, código, instalación, configuración,
+    uso, mantenimiento + validación del despliegue.
+  - [`infrastructure.md`](../deployment/infrastructure.md) — componentes,
+    dimensionamiento, **comparativa de plataformas con costos** (Cloud Run
+    recomendada: ~$0–5/mes con scale-to-zero) y **plan de
+    mantenimiento/monitoreo** (PSI, latencia, runbook de re-entrenamiento,
+    ~60 h/año de operación).
+- Suite de tests extendida: **31 tests nuevos** de serving (scorer, bandas
+  de riesgo, contratos, endpoints, batch) sobre artefactos sintéticos de
+  sesión — total **128 tests**, cobertura 86 %.
+- CI extendido con dos jobs: `smoke-test-phase4` (smoke in-process con
+  verificación del JSON de evidencia) y `docker-smoke` (build de la imagen
+  + `/health` + `/predict` sobre HTTP real).
+- Targets de Makefile: `serve`, `deploy-smoke`, `docker-build`,
+  `docker-up`, `docker-down`, `phase4`.
+- Versión del paquete: `0.2.0` → `0.3.0`; dependencias nuevas: `fastapi`,
+  `uvicorn[standard]` (core) y `httpx` (dev).
+
+**Decisiones clave de la fase:**
+
+- **API REST sobre FastAPI** (no batch-only): es la forma de "puesta en
+  producción" que el CRM/equipo de retención puede consumir, cumple
+  "eficiente y escalable" de la rúbrica y era lo comprometido en la
+  arquitectura desde Fase 1.
+- **Artefactos horneados en la imagen** (no volúmenes): el `docker build`
+  reconstruye el pipeline completo desde un checkout limpio — la imagen es
+  autocontenida, inmutable y versionable; el rollback es volver al tag
+  anterior.
+- **Threshold operable por entorno** (`CHURNLENS_SERVING_THRESHOLD`) sin
+  rebuild — default: el 0.58 sintonizado del manifiesto.
+- **Carga perezosa (PEP 562) de `churnlens.models.train`** en el
+  `__init__` del subpaquete: el serving ya no arrastra LightGBM/libgomp a
+  la imagen de producción.
+- **Endpoints síncronos (`def`)**: FastAPI los despacha al threadpool — el
+  trabajo CPU-bound de sklearn no bloquea el event loop.
+- **`populate_by_name=True` en `Settings`**: las rutas (`data_dir`,
+  `models_dir`) ahora tienen alias de entorno (`CHURNLENS_DATA_DIR`,
+  `CHURNLENS_MODELS_DIR`) para redirigirse dentro del contenedor sin
+  romper la construcción por nombre de campo usada en tests.
+
+**Resultados clave (held-out `test.parquet`, primera apertura — threshold fijo 0.58):**
+
+| Métrica | `val` (Fase 3) | `test` (Fase 4) |
+|---------|---------------:|----------------:|
+| PR-AUC | 0.6293 | **0.6313** |
+| ROC-AUC | 0.8286 | **0.8460** |
+| F1 | 0.6390 | 0.6145 |
+| Recall | 0.7402 | 0.7286 |
+| Brier | 0.1700 | 0.1678 |
+| Lift @ 10 % | 2.70× | **2.78×** |
+
+Sin degradación material — el modelo desplegado generaliza y el threshold
+sintonizado en `val` se sostiene.
+
+### Próximos pasos (Fase 5 — entrega final)
+
+- _Fairness audit_ por `gender` y `SeniorCitizen` (pendiente de Fase 3).
+- Completar la [model card](../governance/model_card.md) con los números
+  finales de test.
+- Demo end-to-end + reporte final consolidado de las 5 fases.
+- (Opcional) despliegue real en Cloud Run con autenticación IAM.

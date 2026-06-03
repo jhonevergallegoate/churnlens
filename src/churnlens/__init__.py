@@ -5,7 +5,7 @@ Paquete principal del proyecto aplicado del Módulo 6 (Diplomado MLDS UNAL).
 
 from __future__ import annotations
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 __author__ = "Jhon Gallego"
 __email__ = "jhgallegoa21@gmail.com"
 

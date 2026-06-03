@@ -105,6 +105,27 @@ ProfileReport(df, title='ChurnLens · ydata-profiling', explorative=True).to_fil
 print(f'Reporte HTML generado: {out / \"ydata_profiling.html\"}')"
 
 # =====================================================================
+# Fase 4 — despliegue
+# =====================================================================
+.PHONY: serve deploy-smoke docker-build docker-up docker-down phase4
+serve:  ## Levanta la API de inferencia en modo desarrollo (uvicorn --reload)
+	$(PYTHON) -m churnlens.cli serve --reload
+
+deploy-smoke:  ## Smoke test end-to-end de la API (in-process; reconstruye artefactos si faltan)
+	$(PYTHON) scripts/deployment/main.py --ensure-artifacts
+
+docker-build:  ## Construye la imagen de producción (reentrenando artefactos dentro del builder)
+	docker build -t churnlens-api:latest .
+
+docker-up:  ## Build + arranque de la API con docker compose (healthcheck incluido)
+	docker compose up --build -d
+
+docker-down:  ## Detiene y elimina el contenedor de la API
+	docker compose down
+
+phase4: deploy-smoke docker-build  ## Pipeline completo de la Fase 4 (smoke + imagen)
+
+# =====================================================================
 # Calidad
 # =====================================================================
 .PHONY: lint format type-check test test-cov check

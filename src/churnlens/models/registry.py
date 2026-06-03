@@ -60,7 +60,7 @@ class ModelEntry:
 def _models_dir(models_dir: Path | str | None) -> Path:
     if models_dir is not None:
         return Path(models_dir)
-    return default_settings.project_root / DEFAULT_MODELS_DIRNAME
+    return default_settings.models_dir
 
 
 def _now_iso() -> str:

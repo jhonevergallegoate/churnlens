@@ -1,0 +1,40 @@
+# Contexto mínimo: solo pyproject + src + scripts + README/LICENSE
+# llegan al daemon de Docker. Todo lo demás se reconstruye en el builder.
+.git
+.github
+.claude
+.venv
+venv
+
+# Caches y artefactos de herramientas
+**/__pycache__
+*.egg-info
+.pytest_cache
+.ruff_cache
+.mypy_cache
+.coverage
+coverage.xml
+htmlcov
+
+# Datos, modelos y reportes locales (el builder los regenera)
+data
+models
+reports
+notebooks
+
+# Documentación y tests (no se necesitan en la imagen)
+docs
+tests
+
+# Configuración local
+.env
+.env.*
+.editorconfig
+.pre-commit-config.yaml
+Makefile
+SECURITY.md
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore

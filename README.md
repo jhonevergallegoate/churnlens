@@ -8,10 +8,10 @@
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000)](https://github.com/astral-sh/ruff)
 [![Type: mypy](https://img.shields.io/badge/types-mypy-2A6DB2)](https://mypy.readthedocs.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
-[![Status](https://img.shields.io/badge/Fase-3%20%C2%B7%20Modelamiento-success)](docs/modeling/final_model_report.md)
+[![Status](https://img.shields.io/badge/Fase-4%20%C2%B7%20Despliegue-success)](docs/deployment/deploymentdoc.md)
 
 **Diplomado en _Machine Learning and Data Science_ (MLDS) — Universidad Nacional de Colombia**
-Módulo 6 · _Desarrollo de Aplicaciones con Machine Learning_ · Proyecto Aplicado · **Fase 3 (10 %)**
+Módulo 6 · _Desarrollo de Aplicaciones con Machine Learning_ · Proyecto Aplicado · **Fase 4 (10 %)**
 
 </div>
 
@@ -25,13 +25,14 @@ Módulo 6 · _Desarrollo de Aplicaciones con Machine Learning_ · Proyecto Aplic
 4. [Documentación de la Fase 1](#-documentación-de-la-fase-1)
 5. [Documentación de la Fase 2](#-documentación-de-la-fase-2)
 6. [Documentación de la Fase 3](#-documentación-de-la-fase-3)
-7. [Arquitectura de la solución](#%EF%B8%8F-arquitectura-de-la-solución)
-8. [Cronograma del proyecto](#-cronograma-del-proyecto)
-8. [Stack tecnológico](#-stack-tecnológico)
-9. [Buenas prácticas](#-buenas-prácticas)
-10. [Reproducibilidad](#-reproducibilidad)
-11. [Equipo](#-equipo)
-12. [Licencia](#-licencia)
+7. [Documentación de la Fase 4](#-documentación-de-la-fase-4)
+8. [Arquitectura de la solución](#%EF%B8%8F-arquitectura-de-la-solución)
+9. [Cronograma del proyecto](#-cronograma-del-proyecto)
+10. [Stack tecnológico](#-stack-tecnológico)
+11. [Buenas prácticas](#-buenas-prácticas)
+12. [Reproducibilidad](#-reproducibilidad)
+13. [Equipo](#-equipo)
+14. [Licencia](#-licencia)
 
 ---
 
@@ -41,7 +42,7 @@ Módulo 6 · _Desarrollo de Aplicaciones con Machine Learning_ · Proyecto Aplic
 
 El problema de negocio se aborda como un caso de **clasificación binaria supervisada**: dado un conjunto de atributos del cliente (demográficos, contractuales y de consumo de servicios), predecir la probabilidad de que ese cliente cancele su suscripción en el próximo ciclo de facturación, con el objetivo de priorizar acciones de retención sobre los clientes con mayor riesgo y mayor valor.
 
-El proyecto cumple con los entregables exigidos por las dos primeras rúbricas:
+El proyecto cumple con los entregables exigidos por las cuatro primeras rúbricas:
 
 **Fase 1 (10 %) — Entendimiento del negocio y carga de datos:**
 
@@ -61,6 +62,13 @@ El proyecto cumple con los entregables exigidos por las dos primeras rúbricas:
 - 🤖 **Código de modelamiento** con un catálogo de 8 estimadores (3 dummies + LogReg balanced + LogReg-L1 + Random Forest + HistGradientBoosting + LightGBM) entrenados con CV estratificada 5-fold.
 - 📐 **Reporte de línea base** comparando los baselines (DummyClassifier × 3 + LogReg balanced) contra los modelos no triviales.
 - 🏆 **Reporte del modelo final** con métricas, _threshold tuning_, curvas de calibración y matriz de confusión.
+
+**Fase 4 (10 %) — Despliegue:**
+
+- 🚀 **Código de despliegue**: API REST de inferencia (FastAPI + uvicorn) con `/health`, `/metadata`, `/predict` y `/predict/batch`, empaquetada en imagen Docker multi-stage reproducible (el builder reconstruye datos + preprocesador + modelo desde cero con semilla fija).
+- 📘 **Documentación del despliegue** ([deploymentdoc.md](docs/deployment/deploymentdoc.md)) siguiendo el template TDSP: infraestructura, código, instalación, configuración, uso y mantenimiento.
+- 🏗️ **Documentación de la infraestructura** ([infrastructure.md](docs/deployment/infrastructure.md)) con dimensionamiento, comparativa de plataformas, **costos** y **plan de mantenimiento/monitoreo**.
+- ✅ **Validación held-out**: primera evaluación sobre `test.parquet` — PR-AUC **0.6313** (vs 0.6293 en val), sin degradación.
 
 > **Hipótesis central de negocio:** Es posible identificar — con anticipación suficiente para activar una intervención comercial — a los clientes con mayor probabilidad de cancelar su suscripción, usando únicamente variables estructurales del cliente, su contrato y su consumo de servicios, generando un _lift_ accionable frente a una estrategia de retención no segmentada.
 
@@ -88,14 +96,23 @@ churnlens/
 │   │   └── data_summary_report.md     #    ▸ Reporte de resumen (Fase 2)
 │   ├── architecture/                  # 3. Arquitectura de la solución
 │   │   └── solution_architecture.md   #    ▸ Diagrama + componentes
-│   └── governance/                    # 4. Gobernanza
-│       ├── ethics_and_fairness.md     #    ▸ Ética y equidad algorítmica
-│       ├── privacy_and_compliance.md  #    ▸ Privacidad y cumplimiento
-│       └── model_card.md              #    ▸ Model card (template)
+│   ├── modeling/                      # 4. Modelado (Fase 3)
+│   │   ├── feature_selection.md       #    ▸ Selección de features (consenso 4 técnicas)
+│   │   ├── baseline_models.md         #    ▸ Línea base (8 modelos, CV 5-fold)
+│   │   └── final_model_report.md      #    ▸ Reporte del modelo ganador
+│   ├── deployment/                    # 5. Despliegue (Fase 4)
+│   │   ├── deploymentdoc.md           #    ▸ Documentación del despliegue (template TDSP)
+│   │   └── infrastructure.md          #    ▸ Infraestructura: costos + mantenimiento
+│   ├── governance/                    # 6. Gobernanza
+│   │   ├── ethics_and_fairness.md     #    ▸ Ética y equidad algorítmica
+│   │   ├── privacy_and_compliance.md  #    ▸ Privacidad y cumplimiento
+│   │   └── model_card.md              #    ▸ Model card (template)
+│   └── project_management/
+│       └── phase_log.md               #    ▸ Bitácora cronológica por fase
 ├── src/churnlens/                     # Paquete Python instalable
 │   ├── config.py                      # Configuración con Pydantic Settings
 │   ├── logger.py                      # Logging estructurado con structlog
-│   ├── cli.py                         # CLI con Typer
+│   ├── cli.py                         # CLI con Typer (incluye `churnlens serve`)
 │   ├── data/
 │   │   ├── loader.py                  # Descarga y carga del dataset
 │   │   ├── schema.py                  # Esquemas Pandera para validación
@@ -104,38 +121,53 @@ churnlens/
 │   │   ├── engineering.py             # Features derivadas (tenure_bucket, ...)
 │   │   ├── preprocessing.py           # ColumnTransformer sklearn
 │   │   ├── splits.py                  # Split estratificado 70/15/15
+│   │   ├── selection.py               # Selección de features (Fase 3)
 │   │   └── pipeline.py                # Orquestador end-to-end
 │   ├── eda/                           # Análisis exploratorio (Fase 2)
 │   │   ├── summary.py                 # Estadísticas tabulares
 │   │   ├── plots.py                   # Visualizaciones reutilizables
 │   │   └── report.py                  # Orquestador de figuras + tablas
+│   ├── models/                        # Modelado (Fase 3)
+│   │   ├── baseline.py                # Dummies + LogReg balanced
+│   │   ├── train.py                   # Orquestador de entrenamiento (8 modelos)
+│   │   ├── evaluation.py              # Métricas + threshold tuning + figuras
+│   │   └── registry.py                # Persistencia joblib + manifiestos auditables
+│   ├── serving/                       # Despliegue (Fase 4)
+│   │   ├── schemas.py                 # Contratos Pydantic de la API
+│   │   ├── service.py                 # ChurnScorer (pipeline de inferencia)
+│   │   └── api.py                     # Aplicación FastAPI
 │   └── utils/
 │       └── hashing.py                 # Utilidades de integridad (MD5/SHA256)
 ├── scripts/                           # Scripts ejecutables por fase TDSP
 │   ├── data_acquisition/main.py       # Script oficial de carga (Fase 1)
 │   ├── eda/main.py                    # Script oficial de EDA (Fase 2)
 │   ├── preprocessing/main.py          # Script oficial de preprocesamiento (Fase 2)
-│   ├── training/main.py               # (Fase 3)
-│   └── evaluation/main.py             # (Fase 3)
+│   ├── training/main.py               # Script oficial de entrenamiento (Fase 3)
+│   ├── evaluation/main.py             # Script oficial de evaluación (Fase 3)
+│   └── deployment/main.py             # Smoke test E2E del despliegue (Fase 4)
 ├── notebooks/
 │   ├── 01_data_acquisition_eda.ipynb  # Carga + EDA inicial reproducible
-│   └── 02_eda_and_preprocessing.ipynb # EDA completo + preprocesamiento (Fase 2)
+│   ├── 02_eda_and_preprocessing.ipynb # EDA completo + preprocesamiento (Fase 2)
+│   └── 03_modeling_and_evaluation.ipynb # Modelado + evaluación (Fase 3)
 ├── data/                              # Datos (ignorados por git, ver .gitignore)
 │   ├── raw/                           #   ▸ datos originales inmutables
 │   ├── interim/                       #   ▸ transformaciones intermedias
 │   ├── processed/                     #   ▸ datasets listos para modelar
 │   └── external/                      #   ▸ fuentes externas auxiliares
-├── tests/                             # Tests unitarios e integración
+├── models/                            # Registro local: *.joblib + *.metadata.json
+├── tests/                             # Tests unitarios e integración (128 tests)
 ├── reports/figures/                   # Salidas de visualizaciones
 ├── references/                        # Papers, links y material de soporte
-├── .github/workflows/ci.yml           # CI: lint + type-check + tests
+├── .github/workflows/ci.yml           # CI: calidad + smokes Fase 1→4 + docker-smoke
+├── Dockerfile                         # Imagen de producción de la API (Fase 4)
+├── docker-compose.yml                 # Orquestación local con healthcheck (Fase 4)
 ├── pyproject.toml                     # Definición del paquete y herramientas
 ├── Makefile                           # Comandos rápidos reproducibles
 ├── .pre-commit-config.yaml            # Hooks de calidad
 └── README.md
 ```
 
-> 🧭 La carpeta `docs/business_understanding/`, los diccionarios bajo `docs/data/` y el script `scripts/data_acquisition/main.py` corresponden **exactamente** a los entregables exigidos por la rúbrica de la Fase 1; los módulos `src/churnlens/features/`, `src/churnlens/eda/`, `docs/data/data_summary_report.md` y los scripts `scripts/preprocessing/main.py` y `scripts/eda/main.py` cubren los exigidos por la Fase 2.
+> 🧭 La carpeta `docs/business_understanding/`, los diccionarios bajo `docs/data/` y el script `scripts/data_acquisition/main.py` corresponden **exactamente** a los entregables exigidos por la rúbrica de la Fase 1; los módulos `src/churnlens/features/`, `src/churnlens/eda/`, `docs/data/data_summary_report.md` y los scripts `scripts/preprocessing/main.py` y `scripts/eda/main.py` cubren los exigidos por la Fase 2; `src/churnlens/models/`, `features/selection.py` y `docs/modeling/` cubren la Fase 3; y `src/churnlens/serving/`, el `Dockerfile` y `docs/deployment/` cubren los de la Fase 4.
 
 ---
 
@@ -220,6 +252,23 @@ churnlens model evaluate --model lightgbm --split val
 churnlens model list
 ```
 
+### Despliegue (Fase 4)
+
+```bash
+# Vía Docker (autocontenida: el build regenera datos + preprocesador + modelo)
+make docker-up                    # docker compose up --build -d
+curl http://localhost:8000/health
+curl http://localhost:8000/docs   # documentación interactiva (Swagger UI)
+make docker-down
+
+# Vía local (requiere artefactos de Fase 2-3)
+churnlens serve                   # uvicorn en http://127.0.0.1:8000
+make serve                        # idem, con --reload (desarrollo)
+
+# Smoke test E2E oficial de la fase (reconstruye artefactos si faltan)
+make deploy-smoke                 # evidencia → reports/tables/deployment_smoke.json
+```
+
 ### Smoke-test
 
 ```bash
@@ -285,6 +334,25 @@ Artefactos producidos:
 - **Modelos persistidos** + manifiestos auditados (`hash_train`, `hash_val`, `hash_model`) en `models/<name>.joblib` + `models/<name>.metadata.json`.
 - **Manifest de selección** consumible por `train_models(feature_subset=...)` en `data/processed/feature_consensus.json`.
 - **Notebook** narrativo en [`notebooks/03_modeling_and_evaluation.ipynb`](notebooks/03_modeling_and_evaluation.ipynb).
+
+---
+
+## Documentación de la Fase 4
+
+| Entregable de la rúbrica                              | Ubicación                                                                                                                                          |
+|-------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Código de despliegue**                              | [`src/churnlens/serving/`](src/churnlens/serving/) + [`Dockerfile`](Dockerfile) + [`docker-compose.yml`](docker-compose.yml) + [`scripts/deployment/main.py`](scripts/deployment/main.py) |
+| **Documentación del despliegue**                      | [`docs/deployment/deploymentdoc.md`](docs/deployment/deploymentdoc.md)                                                                              |
+| **Documentación de la infraestructura**               | [`docs/deployment/infrastructure.md`](docs/deployment/infrastructure.md) (incluye **costos** y **mantenimiento**)                                   |
+
+Características del servicio:
+
+- **4 endpoints**: `GET /health`, `GET /metadata`, `POST /predict`, `POST /predict/batch` (hasta 1 000 clientes/request) + docs interactivas en `/docs`.
+- **Contratos estrictos**: el payload replica el [diccionario de datos](docs/data/data_dictionary.md) con dominios cerrados y reglas de integridad cruzada (Pydantic) — entradas fuera de contrato → `422`.
+- **Imagen reproducible**: build multi-stage que reconstruye los artefactos desde cero (semilla 42) — `docker build` desde un checkout limpio produce probabilidades byte-equivalentes.
+- **Producción endurecida**: usuario no-root, healthcheck, logs JSON, header de latencia `X-Process-Time-Ms`, threshold operable por variable de entorno sin rebuild.
+- **Validación automatizada**: 31 tests de serving + smoke E2E in-process ([`deployment_smoke.json`](reports/tables/)) + job de CI [`docker-smoke`](.github/workflows/ci.yml) que construye la imagen y la ejercita sobre HTTP real.
+- **Evaluación held-out**: primera apertura de `test.parquet` — PR-AUC **0.6313**, ROC-AUC **0.8460**, lift@10 % **2.78×** (sin degradación vs val; ver [deploymentdoc.md §4.2](docs/deployment/deploymentdoc.md)).
 
 ---
 

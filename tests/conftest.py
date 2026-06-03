@@ -2,13 +2,19 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from io import StringIO
+from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
 import pytest
 
 from churnlens.data.loader import TelcoChurnLoader
+
+if TYPE_CHECKING:
+    from churnlens.serving.service import ChurnScorer
 
 # CSV mínimo con TODAS las columnas y combinaciones válidas del dataset Telco.
 # Sirve para probar el loader sin depender de red.
@@ -41,15 +47,12 @@ def validated_sample(sample_dataframe: pd.DataFrame) -> pd.DataFrame:
     return TelcoChurnLoader._coerce_types(sample_dataframe)
 
 
-@pytest.fixture
-def synthetic_churn_dataset() -> pd.DataFrame:
-    """Genera un DataFrame sintético de 200 filas conforme al esquema crudo.
+def make_synthetic_raw(n: int = 200, seed: int = 42) -> pd.DataFrame:
+    """Genera un DataFrame sintético conforme al esquema crudo (dtype object).
 
-    Construido en `object` dtype para reflejar el formato post-`read_csv`;
-    deja que el _loader_ aplique el casteo canónico.
+    Reutilizable fuera de fixtures (p. ej. fixtures de sesión de serving).
     """
-    rng = np.random.default_rng(42)
-    n = 200
+    rng = np.random.default_rng(seed)
     customer_id = [f"{1000 + i:04d}-ABCDE" for i in range(n)]
     gender = rng.choice(["Female", "Male"], size=n)
     senior = rng.choice([0, 1], size=n, p=[0.85, 0.15])
@@ -123,6 +126,87 @@ def synthetic_churn_dataset() -> pd.DataFrame:
 
 
 @pytest.fixture
+def synthetic_churn_dataset() -> pd.DataFrame:
+    """Genera un DataFrame sintético de 200 filas conforme al esquema crudo.
+
+    Construido en `object` dtype para reflejar el formato post-`read_csv`;
+    deja que el _loader_ aplique el casteo canónico.
+    """
+    return make_synthetic_raw()
+
+
+@pytest.fixture
 def validated_synthetic(synthetic_churn_dataset: pd.DataFrame) -> pd.DataFrame:
     """Synthetic dataset casteado al esquema canónico."""
     return TelcoChurnLoader._coerce_types(synthetic_churn_dataset)
+
+
+# ---------------------------------------------------------------------------
+# Fixtures de serving (Fase 4)
+# ---------------------------------------------------------------------------
+@dataclass(frozen=True)
+class ServingArtifacts:
+    """Rutas de los artefactos mínimos para construir un ChurnScorer."""
+
+    models_dir: Path
+    model_name: str
+    preprocessor_path: Path
+
+
+@pytest.fixture(scope="session")
+def serving_artifacts(tmp_path_factory: pytest.TempPathFactory) -> ServingArtifacts:
+    """Entrena un modelo pequeño sobre datos sintéticos y persiste los artefactos.
+
+    Replica el pipeline real (engineered features → ColumnTransformer →
+    LogisticRegression → registro joblib + manifiesto) en un directorio
+    temporal de sesión, de modo que los tests de serving no dependan de
+    artefactos locales no versionados.
+    """
+    import joblib
+    from sklearn.linear_model import LogisticRegression
+
+    from churnlens.features.engineering import add_engineered_features
+    from churnlens.features.preprocessing import binarize_target, build_preprocessor
+    from churnlens.models.registry import save_model
+
+    tmp = tmp_path_factory.mktemp("serving")
+    raw = TelcoChurnLoader._coerce_types(make_synthetic_raw(n=400))
+    df = add_engineered_features(raw).drop(columns=["customerID"])
+    y = binarize_target(df.pop("Churn"))
+
+    preprocessor = build_preprocessor()
+    x = preprocessor.fit_transform(df)
+    feature_names = list(preprocessor.get_feature_names_out())
+
+    model = LogisticRegression(max_iter=500, random_state=42).fit(x, y.to_numpy())
+
+    models_dir = tmp / "models"
+    save_model(
+        model,
+        "logreg_test",
+        metadata={
+            "feature_set": feature_names,
+            "metrics": {"val_tuned": {"threshold": 0.58, "pr_auc": 0.6}},
+        },
+        models_dir=models_dir,
+    )
+    preprocessor_path = tmp / "preprocessor.joblib"
+    joblib.dump(preprocessor, preprocessor_path)
+
+    return ServingArtifacts(
+        models_dir=models_dir,
+        model_name="logreg_test",
+        preprocessor_path=preprocessor_path,
+    )
+
+
+@pytest.fixture(scope="session")
+def serving_scorer(serving_artifacts: ServingArtifacts) -> ChurnScorer:
+    """ChurnScorer listo para puntuar, construido sobre los artefactos de sesión."""
+    from churnlens.serving.service import ChurnScorer
+
+    return ChurnScorer(
+        model_name=serving_artifacts.model_name,
+        models_dir=serving_artifacts.models_dir,
+        preprocessor_path=serving_artifacts.preprocessor_path,
+    )
