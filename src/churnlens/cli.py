@@ -18,6 +18,7 @@ churnlens eda report
 churnlens features select       [--k 20]
 churnlens model train           [--model NAME] [--cv 5] [--use-consensus]
 churnlens model evaluate        [--model NAME] [--split val|test] [--threshold 0.5]
+churnlens model fairness        [--model NAME] [--threshold 0.5]
 churnlens model list
 churnlens serve                 [--host 127.0.0.1] [--port 8000] [--workers 1] [--reload]
 ```
@@ -431,6 +432,55 @@ def cmd_model_evaluate(
     for k, v in metrics.items():
         table.add_row(k, f"{v:.4f}" if isinstance(v, float) else str(v))
     console.print(table)
+
+
+@model_app.command("fairness")
+def cmd_model_fairness(
+    model_name: Annotated[
+        str,
+        typer.Option("--model", "-m", help="Nombre del modelo registrado."),
+    ] = "logreg_l1",
+    threshold: Annotated[
+        float | None,
+        typer.Option("--threshold", help="Threshold; default = el sintonizado del manifest."),
+    ] = None,
+) -> None:
+    """Auditoría de fairness por atributos sensibles sobre `test` (Fase 5)."""
+    from churnlens.models.fairness import run_fairness_audit
+
+    try:
+        result = run_fairness_audit(model_name=model_name, threshold=threshold)
+    except (FileNotFoundError, RuntimeError) as exc:
+        console.print(f"[red]✗[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+
+    table = Table(
+        title=(
+            f"ChurnLens · Fairness — {result.model_name} "
+            f"(test · thr={result.threshold:.2f} · n={result.n_rows})"
+        ),
+        show_header=True,
+    )
+    for col in ("atributo", "DI", "DPD", "EOD", "max ECE", "veredicto"):
+        table.add_column(col, style="bold cyan" if col == "atributo" else "")
+    for attr, entry in result.summary.items():
+        verdict = (
+            "[green]✓ dentro de umbrales[/green]"
+            if entry["within_thresholds"]
+            else "[yellow]⚠ revisar[/yellow]"
+        )
+        table.add_row(
+            attr,
+            f"{entry['disparate_impact']:.3f}",
+            f"{entry['demographic_parity_diff']:.3f}",
+            f"{entry['equalized_odds_diff']:.3f}",
+            f"{entry['max_ece']:.3f}",
+            verdict,
+        )
+    console.print(table)
+    console.print(f"Tabla por grupos: [dim]{result.groups_path}[/dim]")
+    console.print(f"Resumen JSON:     [dim]{result.summary_path}[/dim]")
+    console.print(f"Figura:           [dim]{result.figure_path}[/dim]")
 
 
 @model_app.command("list")

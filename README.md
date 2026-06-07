@@ -8,10 +8,11 @@
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000)](https://github.com/astral-sh/ruff)
 [![Type: mypy](https://img.shields.io/badge/types-mypy-2A6DB2)](https://mypy.readthedocs.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
-[![Status](https://img.shields.io/badge/Fase-4%20%C2%B7%20Despliegue-success)](docs/deployment/deploymentdoc.md)
+[![Status](https://img.shields.io/badge/Fase-5%20%C2%B7%20Final-success)](docs/acceptance/exit_report.md)
+[![Version](https://img.shields.io/badge/release-1.0.0-blue)](docs/project_management/phase_log.md)
 
 **Diplomado en _Machine Learning and Data Science_ (MLDS) — Universidad Nacional de Colombia**
-Módulo 6 · _Desarrollo de Aplicaciones con Machine Learning_ · Proyecto Aplicado · **Fase 4 (10 %)**
+Módulo 6 · _Desarrollo de Aplicaciones con Machine Learning_ · Proyecto Aplicado · **Entrega final — 5 fases completas**
 
 </div>
 
@@ -26,13 +27,14 @@ Módulo 6 · _Desarrollo de Aplicaciones con Machine Learning_ · Proyecto Aplic
 5. [Documentación de la Fase 2](#-documentación-de-la-fase-2)
 6. [Documentación de la Fase 3](#-documentación-de-la-fase-3)
 7. [Documentación de la Fase 4](#-documentación-de-la-fase-4)
-8. [Arquitectura de la solución](#%EF%B8%8F-arquitectura-de-la-solución)
-9. [Cronograma del proyecto](#-cronograma-del-proyecto)
-10. [Stack tecnológico](#-stack-tecnológico)
-11. [Buenas prácticas](#-buenas-prácticas)
-12. [Reproducibilidad](#-reproducibilidad)
-13. [Equipo](#-equipo)
-14. [Licencia](#-licencia)
+8. [Documentación de la Fase 5 (final)](#-documentación-de-la-fase-5-final)
+9. [Arquitectura de la solución](#%EF%B8%8F-arquitectura-de-la-solución)
+10. [Cronograma del proyecto](#-cronograma-del-proyecto)
+11. [Stack tecnológico](#-stack-tecnológico)
+12. [Buenas prácticas](#-buenas-prácticas)
+13. [Reproducibilidad](#-reproducibilidad)
+14. [Equipo](#-equipo)
+15. [Licencia](#-licencia)
 
 ---
 
@@ -42,7 +44,7 @@ Módulo 6 · _Desarrollo de Aplicaciones con Machine Learning_ · Proyecto Aplic
 
 El problema de negocio se aborda como un caso de **clasificación binaria supervisada**: dado un conjunto de atributos del cliente (demográficos, contractuales y de consumo de servicios), predecir la probabilidad de que ese cliente cancele su suscripción en el próximo ciclo de facturación, con el objetivo de priorizar acciones de retención sobre los clientes con mayor riesgo y mayor valor.
 
-El proyecto cumple con los entregables exigidos por las cuatro primeras rúbricas:
+El proyecto cumple con los entregables exigidos por las cinco rúbricas:
 
 **Fase 1 (10 %) — Entendimiento del negocio y carga de datos:**
 
@@ -69,6 +71,13 @@ El proyecto cumple con los entregables exigidos por las cuatro primeras rúbrica
 - 📘 **Documentación del despliegue** ([deploymentdoc.md](docs/deployment/deploymentdoc.md)) siguiendo el template TDSP: infraestructura, código, instalación, configuración, uso y mantenimiento.
 - 🏗️ **Documentación de la infraestructura** ([infrastructure.md](docs/deployment/infrastructure.md)) con dimensionamiento, comparativa de plataformas, **costos** y **plan de mantenimiento/monitoreo**.
 - ✅ **Validación held-out**: primera evaluación sobre `test.parquet` — PR-AUC **0.6313** (vs 0.6293 en val), sin degradación.
+
+**Fase 5 (final) — Evaluación, fairness y aceptación:**
+
+- ⚖️ **Auditoría de fairness** sobre 4 atributos sensibles (`gender`, `SeniorCitizen`, `Partner`, `Dependents`): módulo [`churnlens.models.fairness`](src/churnlens/models/fairness.py) + script TDSP + job de CI — `gender` con paridad casi perfecta (DI 0.998, EOD 0.012).
+- 📇 **Model card completa** ([model_card.md](docs/governance/model_card.md)) con métricas held-out contra los umbrales objetivo y análisis cuantitativo de equidad.
+- 📋 **Informe de salida** ([exit_report.md](docs/acceptance/exit_report.md)): resultados por fase, evaluación vs baseline, lecciones aprendidas, impacto y conclusiones.
+- 🏁 Release **`1.0.0`** — 142 tests, cobertura 85 %, CI de 9 jobs (lint → … → fairness → docker-smoke).
 
 > **Hipótesis central de negocio:** Es posible identificar — con anticipación suficiente para activar una intervención comercial — a los clientes con mayor probabilidad de cancelar su suscripción, usando únicamente variables estructurales del cliente, su contrato y su consumo de servicios, generando un _lift_ accionable frente a una estrategia de retención no segmentada.
 
@@ -104,9 +113,11 @@ churnlens/
 │   │   ├── deploymentdoc.md           #    ▸ Documentación del despliegue (template TDSP)
 │   │   └── infrastructure.md          #    ▸ Infraestructura: costos + mantenimiento
 │   ├── governance/                    # 6. Gobernanza
-│   │   ├── ethics_and_fairness.md     #    ▸ Ética y equidad algorítmica
+│   │   ├── ethics_and_fairness.md     #    ▸ Ética + resultados de la auditoría (Fase 5)
 │   │   ├── privacy_and_compliance.md  #    ▸ Privacidad y cumplimiento
-│   │   └── model_card.md              #    ▸ Model card (template)
+│   │   └── model_card.md              #    ▸ Model card completa (Fase 5)
+│   ├── acceptance/                    # 7. Aceptación (Fase 5)
+│   │   └── exit_report.md             #    ▸ Informe de salida (template TDSP)
 │   └── project_management/
 │       └── phase_log.md               #    ▸ Bitácora cronológica por fase
 ├── src/churnlens/                     # Paquete Python instalable
@@ -127,10 +138,11 @@ churnlens/
 │   │   ├── summary.py                 # Estadísticas tabulares
 │   │   ├── plots.py                   # Visualizaciones reutilizables
 │   │   └── report.py                  # Orquestador de figuras + tablas
-│   ├── models/                        # Modelado (Fase 3)
+│   ├── models/                        # Modelado (Fase 3) + fairness (Fase 5)
 │   │   ├── baseline.py                # Dummies + LogReg balanced
 │   │   ├── train.py                   # Orquestador de entrenamiento (8 modelos)
 │   │   ├── evaluation.py              # Métricas + threshold tuning + figuras
+│   │   ├── fairness.py                # Auditoría de equidad por subgrupos (Fase 5)
 │   │   └── registry.py                # Persistencia joblib + manifiestos auditables
 │   ├── serving/                       # Despliegue (Fase 4)
 │   │   ├── schemas.py                 # Contratos Pydantic de la API
@@ -144,6 +156,7 @@ churnlens/
 │   ├── preprocessing/main.py          # Script oficial de preprocesamiento (Fase 2)
 │   ├── training/main.py               # Script oficial de entrenamiento (Fase 3)
 │   ├── evaluation/main.py             # Script oficial de evaluación (Fase 3)
+│   ├── evaluation/fairness_audit.py   # Auditoría de fairness (Fase 5)
 │   └── deployment/main.py             # Smoke test E2E del despliegue (Fase 4)
 ├── notebooks/
 │   ├── 01_data_acquisition_eda.ipynb  # Carga + EDA inicial reproducible
@@ -155,10 +168,10 @@ churnlens/
 │   ├── processed/                     #   ▸ datasets listos para modelar
 │   └── external/                      #   ▸ fuentes externas auxiliares
 ├── models/                            # Registro local: *.joblib + *.metadata.json
-├── tests/                             # Tests unitarios e integración (128 tests)
+├── tests/                             # Tests unitarios e integración (142 tests)
 ├── reports/figures/                   # Salidas de visualizaciones
 ├── references/                        # Papers, links y material de soporte
-├── .github/workflows/ci.yml           # CI: calidad + smokes Fase 1→4 + docker-smoke
+├── .github/workflows/ci.yml           # CI: calidad + smokes Fase 1→5 + docker-smoke
 ├── Dockerfile                         # Imagen de producción de la API (Fase 4)
 ├── docker-compose.yml                 # Orquestación local con healthcheck (Fase 4)
 ├── pyproject.toml                     # Definición del paquete y herramientas
@@ -167,7 +180,7 @@ churnlens/
 └── README.md
 ```
 
-> 🧭 La carpeta `docs/business_understanding/`, los diccionarios bajo `docs/data/` y el script `scripts/data_acquisition/main.py` corresponden **exactamente** a los entregables exigidos por la rúbrica de la Fase 1; los módulos `src/churnlens/features/`, `src/churnlens/eda/`, `docs/data/data_summary_report.md` y los scripts `scripts/preprocessing/main.py` y `scripts/eda/main.py` cubren los exigidos por la Fase 2; `src/churnlens/models/`, `features/selection.py` y `docs/modeling/` cubren la Fase 3; y `src/churnlens/serving/`, el `Dockerfile` y `docs/deployment/` cubren los de la Fase 4.
+> 🧭 La carpeta `docs/business_understanding/`, los diccionarios bajo `docs/data/` y el script `scripts/data_acquisition/main.py` corresponden **exactamente** a los entregables exigidos por la rúbrica de la Fase 1; los módulos `src/churnlens/features/`, `src/churnlens/eda/`, `docs/data/data_summary_report.md` y los scripts `scripts/preprocessing/main.py` y `scripts/eda/main.py` cubren los exigidos por la Fase 2; `src/churnlens/models/`, `features/selection.py` y `docs/modeling/` cubren la Fase 3; `src/churnlens/serving/`, el `Dockerfile` y `docs/deployment/` cubren los de la Fase 4; y `src/churnlens/models/fairness.py`, `scripts/evaluation/fairness_audit.py`, la model card final y `docs/acceptance/exit_report.md` cubren los de la Fase 5.
 
 ---
 
@@ -269,6 +282,19 @@ make serve                        # idem, con --reload (desarrollo)
 make deploy-smoke                 # evidencia → reports/tables/deployment_smoke.json
 ```
 
+### Evaluación final + fairness (Fase 5)
+
+```bash
+# Pipeline de la Fase 5 (evaluación del ganador + auditoría de fairness)
+make phase5
+
+# Solo la auditoría de fairness (requiere artefactos de Fase 2-3)
+make fairness                     # evidencia → reports/tables/fairness_*.{csv,json}
+
+# Equivalente vía CLI (tabla resumen en terminal)
+churnlens model fairness --model logreg_l1
+```
+
 ### Smoke-test
 
 ```bash
@@ -295,7 +321,7 @@ Documentación complementaria (valor extra):
 - [Arquitectura de la solución](docs/architecture/solution_architecture.md)
 - [Ética y equidad algorítmica](docs/governance/ethics_and_fairness.md)
 - [Privacidad y cumplimiento](docs/governance/privacy_and_compliance.md)
-- [Model card (template)](docs/governance/model_card.md)
+- [Model card](docs/governance/model_card.md)
 - [Reporte de calidad de datos](docs/data/data_quality_report.md)
 
 ---
@@ -353,6 +379,24 @@ Características del servicio:
 - **Producción endurecida**: usuario no-root, healthcheck, logs JSON, header de latencia `X-Process-Time-Ms`, threshold operable por variable de entorno sin rebuild.
 - **Validación automatizada**: 31 tests de serving + smoke E2E in-process ([`deployment_smoke.json`](reports/tables/)) + job de CI [`docker-smoke`](.github/workflows/ci.yml) que construye la imagen y la ejercita sobre HTTP real.
 - **Evaluación held-out**: primera apertura de `test.parquet` — PR-AUC **0.6313**, ROC-AUC **0.8460**, lift@10 % **2.78×** (sin degradación vs val; ver [deploymentdoc.md §4.2](docs/deployment/deploymentdoc.md)).
+
+---
+
+## Documentación de la Fase 5 (final)
+
+| Entregable de la rúbrica                              | Ubicación                                                                                                                                          |
+|-------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Código de evaluación del modelo**                   | [`scripts/evaluation/main.py`](scripts/evaluation/main.py) + [`scripts/evaluation/fairness_audit.py`](scripts/evaluation/fairness_audit.py) + [`src/churnlens/models/`](src/churnlens/models/) |
+| **Interpretación de los resultados**                  | [`docs/acceptance/exit_report.md`](docs/acceptance/exit_report.md) + [`docs/governance/model_card.md`](docs/governance/model_card.md) §4 y §7      |
+| **Informe de salida (aceptación TDSP)**               | [`docs/acceptance/exit_report.md`](docs/acceptance/exit_report.md)                                                                                  |
+
+Cierre de la fase:
+
+- **Auditoría de fairness** sobre `gender`, `SeniorCitizen`, `Partner` y `Dependents` (held-out, threshold 0.58): `gender` con paridad casi perfecta (DI **0.998**, EOD **0.012**); las disparidades de los demás atributos se explican por prevalencias reales y la decisión de no mitigar queda **documentada** en [`ethics_and_fairness.md` §4](docs/governance/ethics_and_fairness.md).
+- **Model card completa** con métricas train/CV/test contra los umbrales objetivo de la Fase 1 y lectura honesta de cumplimiento.
+- **Evidencia reproducible** (`make fairness`, también publicada como artifact del CI): `fairness_groups_logreg_l1.csv` · `fairness_summary_logreg_l1.json` en [`reports/tables/`](reports/tables/) y `fairness_audit_logreg_l1.png` en [`reports/figures/`](reports/figures/).
+- **CI**: job `smoke-test-phase5` que reconstruye el pipeline, ejecuta la auditoría y verifica la paridad de género sobre datos reales.
+- Release **`1.0.0`** — proyecto completo en sus 5 fases.
 
 ---
 

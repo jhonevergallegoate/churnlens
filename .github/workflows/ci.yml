@@ -291,6 +291,74 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+  smoke-test-phase5:
+    name: End-to-end smoke test (fairness · Fase 5)
+    runs-on: ubuntu-latest
+    needs: smoke-test-phase4
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install package
+        run: pip install -e ".[dev]"
+
+      - name: Download dataset
+        run: python scripts/data_acquisition/main.py --quiet
+
+      - name: Run preprocessing pipeline (Fase 2)
+        run: python scripts/preprocessing/main.py --quiet
+
+      - name: Train winning model (subset rápido)
+        run: |
+          python scripts/training/main.py --quiet --cv 3 \
+            --models dummy_prior logreg_l1
+
+      - name: Run fairness audit (Fase 5)
+        run: python scripts/evaluation/fairness_audit.py --quiet
+
+      - name: Verify expected outputs (Fase 5)
+        run: |
+          test -f reports/tables/fairness_groups_logreg_l1.csv
+          test -f reports/tables/fairness_summary_logreg_l1.json
+          test -f reports/figures/fairness_audit_logreg_l1.png
+          python <<'PY'
+          import json
+          from pathlib import Path
+
+          payload = json.loads(
+              Path("reports/tables/fairness_summary_logreg_l1.json").read_text("utf-8")
+          )
+          assert payload["model"] == "logreg_l1", payload
+          assert payload["split"] == "test", payload
+          expected = {"gender", "SeniorCitizen", "Partner", "Dependents"}
+          assert set(payload["attributes"]) == expected, payload["attributes"]
+          for attr, entry in payload["attributes"].items():
+              assert 0.0 <= entry["disparate_impact"] <= 1.0, (attr, entry)
+              assert isinstance(entry["within_thresholds"], bool), (attr, entry)
+          # La paridad de género observada en el proyecto debe sostenerse.
+          assert payload["attributes"]["gender"]["demographic_parity_ok"], payload
+          print("smoke-test-phase5 OK")
+          PY
+
+      - name: Upload fairness artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: fairness-artifacts
+          path: |
+            reports/tables/fairness_groups_logreg_l1.csv
+            reports/tables/fairness_summary_logreg_l1.json
+            reports/figures/fairness_audit_logreg_l1.png
+          if-no-files-found: error
+          retention-days: 30
+
   docker-smoke:
     name: Docker build + smoke HTTP (Fase 4)
     runs-on: ubuntu-latest

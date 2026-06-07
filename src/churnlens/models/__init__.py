@@ -6,6 +6,7 @@ Expone las APIs principales:
 * :mod:`churnlens.models.registry`     — persistencia con metadatos auditables.
 * :mod:`churnlens.models.evaluation`   — métricas, threshold tuning y figuras.
 * :mod:`churnlens.models.train`        — orquestador end-to-end del entrenamiento.
+* :mod:`churnlens.models.fairness`     — auditoría de equidad por subgrupos (Fase 5).
 
 Convención: todos los entrenamientos consumen los `*.parquet` producidos por
 la Fase 2 (`data/processed/`), nunca el CSV crudo. La estratificación, el
@@ -31,6 +32,11 @@ from churnlens.models.evaluation import (
     binary_metrics,
     optimal_threshold,
     threshold_sweep,
+)
+from churnlens.models.fairness import (
+    SENSITIVE_ATTRIBUTES,
+    FairnessAuditResult,
+    run_fairness_audit,
 )
 from churnlens.models.registry import (
     ModelEntry,
@@ -63,6 +69,8 @@ __all__ = [
     "BASELINE_MODEL_NAMES",
     "DEFAULT_THRESHOLDS",
     "MODEL_SPECS",
+    "SENSITIVE_ATTRIBUTES",
+    "FairnessAuditResult",
     "ModelEntry",
     "TrainingArtifacts",
     "binary_metrics",
@@ -70,6 +78,7 @@ __all__ = [
     "list_models",
     "load_model",
     "optimal_threshold",
+    "run_fairness_audit",
     "save_model",
     "threshold_sweep",
     "train_models",

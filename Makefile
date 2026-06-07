@@ -126,6 +126,15 @@ docker-down:  ## Detiene y elimina el contenedor de la API
 phase4: deploy-smoke docker-build  ## Pipeline completo de la Fase 4 (smoke + imagen)
 
 # =====================================================================
+# Fase 5 — evaluación final
+# =====================================================================
+.PHONY: fairness phase5
+fairness:  ## Auditoría de fairness por subgrupos sensibles sobre test (Fase 5)
+	$(PYTHON) scripts/evaluation/fairness_audit.py
+
+phase5: evaluate fairness  ## Pipeline de la Fase 5 (evaluación final + fairness)
+
+# =====================================================================
 # Calidad
 # =====================================================================
 .PHONY: lint format type-check test test-cov check
