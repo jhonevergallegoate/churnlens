@@ -319,3 +319,94 @@ sintonizado en `val` se sostiene.
   finales de test.
 - Demo end-to-end + reporte final consolidado de las 5 fases.
 - (Opcional) despliegue real en Cloud Run con autenticación IAM.
+
+---
+
+## Fase 5 · Evaluación final + Aceptación · _entrega final_
+
+### 2026-06-07 — _Entrega Fase 5 (cierre del proyecto)_
+
+**Estado:** ✅ entregable completo — **proyecto cerrado, versión `1.0.0`**.
+
+**Hitos del día:**
+
+- Implementación del módulo [`src/churnlens/models/fairness.py`](../../src/churnlens/models/fairness.py):
+  - Métricas por subgrupo (`selection_rate`, TPR, FPR, precision, ECE
+    con bins uniformes) y consolidación por atributo (**Disparate
+    Impact**, **Demographic Parity diff**, **Equalized Odds diff**,
+    max ECE) contra los umbrales declarados en
+    [`ethics_and_fairness.md` §3](../governance/ethics_and_fairness.md).
+  - Reconstrucción de los atributos sensibles crudos **replicando el
+    split determinista de la Fase 2** (semilla 42), con verificación de
+    alineación contra la secuencia completa del target de
+    `test.parquet` (divergencia → `RuntimeError`).
+  - Persistencia de evidencia: `fairness_groups_logreg_l1.csv`,
+    `fairness_summary_logreg_l1.json` y figura comparativa
+    `fairness_audit_logreg_l1.png`.
+- Extensión de la CLI con `churnlens model fairness` y script TDSP
+  oficial [`scripts/evaluation/fairness_audit.py`](../../scripts/evaluation/fairness_audit.py)
+  (modo `--strict` para uso como gate de CI).
+- Targets de Makefile: `fairness`, `phase5`.
+- CI extendido con el job `smoke-test-phase5` (pipeline real → audit →
+  verificación estructural del JSON + paridad de género).
+- Suite de tests: **14 tests nuevos** de fairness (unitarios exactos +
+  integración end-to-end sobre artefactos sintéticos) — total
+  **142 tests**, cobertura 85 %.
+- [Model card](../governance/model_card.md) **completa**: identidad
+  final del modelo, métricas train/CV/test contra umbrales objetivo,
+  partición definitiva, auditoría cuantitativa de fairness (§7) e
+  interpretación.
+- [`ethics_and_fairness.md`](../governance/ethics_and_fairness.md)
+  actualizado con resultados (§3.1) y **decisiones de mitigación
+  documentadas** (§4).
+- Nuevo entregable de aceptación
+  [`docs/acceptance/exit_report.md`](../acceptance/exit_report.md)
+  (informe de salida TDSP): resultados por fase, evaluación final vs
+  baseline, cumplimiento de criterios de éxito, lecciones aprendidas,
+  impacto y conclusiones.
+- Versión del paquete: `0.3.0` → **`1.0.0`** (Development Status:
+  Production/Stable).
+
+**Decisiones clave de la fase:**
+
+- **La auditoría reconstruye los atributos sensibles desde el crudo**
+  en lugar de propagarlos por el parquet transformado: no contamina el
+  feature set del modelo y aprovecha el determinismo del split. La
+  alineación se verifica, no se asume.
+- **`SeniorCitizen` se audita aunque no es feature** — quedó excluido
+  del `ColumnTransformer` (ningún bloque lo lista y `remainder="drop"`
+  lo descarta); el riesgo de discriminación vía _proxies_ se evalúa
+  igual. El hallazgo de la exclusión silenciosa queda como lección
+  aprendida en el informe de salida.
+- **No se aplica reponderación pese a DI < 0.80** en
+  `SeniorCitizen`/`Partner`/`Dependents` — desviación documentada: las
+  disparidades reflejan prevalencias reales (seniors churnean 44.4 % vs
+  23.1 %) y la acción del modelo es beneficiosa (ofertas de retención);
+  igualar tasas de selección redirigiría beneficios fuera de los grupos
+  que más churnean (Kleinberg et al., 2016).
+- **El ECE > 0.05 se reporta como global, no diferencial**
+  (test completo 0.153; subgrupos 0.105-0.175): proviene de
+  `class_weight=balanced`. Mitigación (recalibración isotónica) queda
+  como primer ítem de v1.1, no bloquea el release.
+- **La auditoría es informativa, no bloqueante** en CI (el job verifica
+  estructura y paridad de género; el modo `--strict` queda disponible).
+
+**Resultados clave (fairness · test · threshold 0.58):**
+
+| Atributo        | DI    | DPD   | EOD   | max ECE | Veredicto |
+|-----------------|------:|------:|------:|--------:|-----------|
+| `gender`        | 0.998 | 0.001 | 0.012 | 0.156   | ✓ paridad (solo falla ECE global) |
+| `SeniorCitizen` | 0.519 | 0.293 | 0.245 | 0.172   | ⚠ prevalencia-driven |
+| `Partner`       | 0.480 | 0.250 | 0.195 | 0.173   | ⚠ prevalencia-driven |
+| `Dependents`    | 0.387 | 0.276 | 0.224 | 0.175   | ⚠ prevalencia-driven |
+
+- Riesgo residual bajo monitoreo: brecha de TPR ~0.20 en
+  `Partner`/`Dependents` (churners con pareja/dependientes se detectan
+  menos).
+
+### Cierre
+
+Con esta entrega el proyecto queda **completo en sus cinco fases**:
+negocio → datos → modelado → despliegue → evaluación final y
+aceptación. La evidencia consolidada vive en el
+[informe de salida](../acceptance/exit_report.md).

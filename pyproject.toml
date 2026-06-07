@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 # ----------------------------------------------------------------------
 [project]
 name = "churnlens"
-version = "0.3.0"
+version = "1.0.0"
 description = "Predicción temprana de churn en servicios por suscripción — Proyecto Aplicado del Módulo 6 (Diplomado MLDS, Universidad Nacional de Colombia)."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -24,7 +24,7 @@ keywords = [
     "mlds-unal"
 ]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
     "Intended Audience :: Education",
     "License :: OSI Approved :: MIT License",
